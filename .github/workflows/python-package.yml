@@ -34,6 +34,7 @@ jobs:
         [Setup]
         AppName=SuperAppStore
         AppVersion=1.0.0
+        AppId={{36E4AA33-3464-48E9-A418-CDAE5D3CA041}}
         DefaultDirName={autopf}\SuperAppStore
         DefaultGroupName=SuperAppStore
         OutputBaseFilename=SuperAppStore_Setup
