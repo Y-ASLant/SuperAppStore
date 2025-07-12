@@ -46,7 +46,7 @@ jobs:
         SetupIconFile=App.ico
         
         [Files]
-        Source: "dist\SuperAppStore.dist\*"; DestDir: "{app}"; Flags: recursesubdirs
+        Source: "dist\main.dist\*"; DestDir: "{app}"; Flags: recursesubdirs
         
         [Icons]
         Name: "{group}\SuperAppStore"; Filename: "{app}\SuperAppStore.exe"
@@ -60,7 +60,7 @@ jobs:
         iscc installer.iss
     - name: Create ZIP archive
       run: |
-        Compress-Archive -Path dist/SuperAppStore.dist -DestinationPath SuperAppStore.zip
+        Compress-Archive -Path dist/main.dist -DestinationPath SuperAppStore.zip
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
