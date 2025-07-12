@@ -25,16 +25,14 @@ jobs:
     - name: Build with PyInstaller
       run: |
         pyinstaller --name "SuperAppStore" --noconfirm --clean --windowed --onedir --contents-directory Lib --icon="App.ico" --hidden-import PyQt5 --hidden-import PyQt5.QtCore --hidden-import PyQt5.QtGui --hidden-import PyQt5.QtWidgets main.py
-    - name: Download Inno Setup
-      run: |
-        Invoke-WebRequest -Uri "https://jrsoftware.org/download.php/is.exe" -OutFile "innosetup.exe"
-        Start-Process -FilePath "innosetup.exe" -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-" -Wait
+    - name: Setup Inno Setup
+      uses: joncloud/setup-innosetup@v1.0.0
     - name: Create Inno Setup script
       run: |
         @"
         [Setup]
         AppName=SuperAppStore
-        AppVersion=1.0
+        AppVersion=1.0.0
         DefaultDirName={autopf}\SuperAppStore
         DefaultGroupName=SuperAppStore
         OutputBaseFilename=SuperAppStore_Setup
@@ -57,7 +55,7 @@ jobs:
         "@ | Out-File -FilePath "installer.iss" -Encoding utf8
     - name: Build installer
       run: |
-        & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' installer.iss
+        iscc installer.iss
     - name: Create ZIP archive
       run: |
         Compress-Archive -Path dist/SuperAppStore -DestinationPath SuperAppStore.zip
