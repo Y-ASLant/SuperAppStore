@@ -79,17 +79,17 @@
     <message>
         <location filename="../../view/setting_interface.py" line="49"/>
         <source>Light</source>
-        <translation>浅色</translation>
+        <translation>浅色模式</translation>
     </message>
     <message>
         <location filename="../../view/setting_interface.py" line="49"/>
         <source>Dark</source>
-        <translation>深色</translation>
+        <translation>深色模式</translation>
     </message>
     <message>
         <location filename="../../view/setting_interface.py" line="71"/>
         <source>Use system setting</source>
-        <translation>跟随系统设置</translation>
+        <translation>跟随系统</translation>
     </message>
     <message>
         <location filename="../../view/setting_interface.py" line="60"/>

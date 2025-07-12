@@ -32,7 +32,7 @@ else:
 app = QApplication(sys.argv)
 app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
 
-# 设置全局主题色
+# Set global theme color
 setThemeColor('#272b33')
 
 # internationalization
