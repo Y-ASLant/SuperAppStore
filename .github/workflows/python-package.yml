@@ -25,11 +25,46 @@ jobs:
     - name: Build with PyInstaller
       run: |
         pyinstaller --name "SuperAppStore" --noconfirm --clean --windowed --onedir --contents-directory Lib --icon="App.ico" --hidden-import PyQt5 --hidden-import PyQt5.QtCore --hidden-import PyQt5.QtGui --hidden-import PyQt5.QtWidgets main.py
+    - name: Download Inno Setup
+      run: |
+        Invoke-WebRequest -Uri "https://jrsoftware.org/download.php/is.exe" -OutFile "innosetup.exe"
+        Start-Process -FilePath "innosetup.exe" -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-" -Wait
+    - name: Create Inno Setup script
+      run: |
+        @"
+        [Setup]
+        AppName=SuperAppStore
+        AppVersion=1.0
+        DefaultDirName={autopf}\SuperAppStore
+        DefaultGroupName=SuperAppStore
+        OutputBaseFilename=SuperAppStore_Setup
+        ; 优化压缩设置
+        Compression=lzma2/ultra64
+        SolidCompression=yes
+        InternalCompressLevel=max
+        WizardStyle=modern
+        SetupIconFile=App.ico
+        
+        [Files]
+        Source: "dist\SuperAppStore\*"; DestDir: "{app}"; Flags: recursesubdirs
+        
+        [Icons]
+        Name: "{group}\SuperAppStore"; Filename: "{app}\SuperAppStore.exe"
+        Name: "{commondesktop}\SuperAppStore"; Filename: "{app}\SuperAppStore.exe"
+        
+        [Run]
+        Filename: "{app}\SuperAppStore.exe"; Description: "启动应用"; Flags: nowait postinstall skipifsilent
+        "@ | Out-File -FilePath "installer.iss" -Encoding utf8
+    - name: Build installer
+      run: |
+        & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' installer.iss
     - name: Create ZIP archive
       run: |
         Compress-Archive -Path dist/SuperAppStore -DestinationPath SuperAppStore.zip
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: SuperAppStore-zip
-        path: SuperAppStore.zip
+        name: SuperAppStore-artifacts
+        path: |
+          SuperAppStore.zip
+          Output/SuperAppStore_Setup.exe
