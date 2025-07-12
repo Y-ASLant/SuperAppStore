@@ -105,7 +105,7 @@ class SettingInterface(ScrollArea):
         )
         self.aboutCard = PrimaryPushSettingCard(
             self.tr('Check update'),
-            ":/qfluentwidgets/images/logo.png",
+            ":/app/images/logo.ico",
             self.tr('About'),
             '© ' + self.tr('Copyright') + f" {YEAR}, {AUTHOR}. " +
             self.tr('Version') + " " + VERSION,
