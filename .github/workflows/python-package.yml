@@ -26,7 +26,8 @@ jobs:
       run: |
         pyinstaller --name "SuperAppStore" --noconfirm --clean --windowed --onedir --contents-directory Lib --icon="App.ico" --hidden-import PyQt5 --hidden-import PyQt5.QtCore --hidden-import PyQt5.QtGui --hidden-import PyQt5.QtWidgets main.py
     - name: Setup Inno Setup
-      uses: joncloud/setup-innosetup@v1.0.0
+      run: |
+        choco install innosetup -y
     - name: Create Inno Setup script
       run: |
         @"
