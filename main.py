@@ -13,6 +13,8 @@ from app.view.main_window import MainWindow
 
 # Using global variables to prevent th e interface from being destructed
 mainWindow = None
+
+
 def showMainWindow():
     global mainWindow
     mainWindow = MainWindow()
@@ -25,7 +27,8 @@ if cfg.get(cfg.dpiScale) != "Auto":
     os.environ["QT_SCALE_FACTOR"] = str(cfg.get(cfg.dpiScale))
 else:
     QApplication.setHighDpiScaleFactorRoundingPolicy(
-        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+    )
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
 
 # create application
@@ -33,7 +36,7 @@ app = QApplication(sys.argv)
 app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
 
 # Set global theme color
-setThemeColor('#272b33')
+setThemeColor("#272b33")
 
 # internationalization
 locale = cfg.get(cfg.language).value
