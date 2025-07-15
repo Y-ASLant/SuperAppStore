@@ -27,7 +27,6 @@ class HomeInterface(ScrollArea):
     def __initWidget(self):
         self.resize(1000, 800)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setViewportMargins(0, 100, 0, 20)
         self.setWidget(self.scrollWidget)
         self.setWidgetResizable(True)
         self.setObjectName('homeInterface')
@@ -44,9 +43,9 @@ class HomeInterface(ScrollArea):
         self.__initLayout()
 
     def __initLayout(self):
-        self.homeLabel.move(36, 50)
-        
-        self.vBoxLayout.setSpacing(28)
-        self.vBoxLayout.setContentsMargins(36, 10, 36, 0)
+        self.vBoxLayout.setContentsMargins(36, 0, 36, 0)
+        self.vBoxLayout.addSpacing(36)
+        self.vBoxLayout.addWidget(self.homeLabel, 0, Qt.AlignLeft)
+        self.vBoxLayout.addSpacing(10)
         self.vBoxLayout.addWidget(self.welcomeLabel)
         self.vBoxLayout.addStretch(1) 

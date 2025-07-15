@@ -17,6 +17,10 @@ class DownloadInterface(ScrollArea):
         self.scrollWidget = QWidget()
         self.vBoxLayout = QVBoxLayout(self.scrollWidget)
 
+        # 添加标题
+        self.titleLabel = QLabel(self.tr("下载任务"), self)
+        setFont(self.titleLabel, 24, QFont.Weight.Medium)
+
         # 添加分段导航栏
         self.segmentedWidget = SegmentedWidget(self)
 
@@ -27,7 +31,7 @@ class DownloadInterface(ScrollArea):
         self.downloadingPage = QWidget(self)
         self.downloadingPageLayout = QVBoxLayout(self.downloadingPage)
         self.downloadingInfoLabel = QLabel(
-            self.tr("这里显示正在下载的应用"), self.downloadingPage
+            self.tr("暂无正在下载的应用"), self.downloadingPage
         )
         self.downloadingPageLayout.addWidget(self.downloadingInfoLabel)
         self.downloadingPage.setObjectName("downloadingPage")
@@ -36,7 +40,7 @@ class DownloadInterface(ScrollArea):
         self.completedPage = QWidget(self)
         self.completedPageLayout = QVBoxLayout(self.completedPage)
         self.completedInfoLabel = QLabel(
-            self.tr("这里显示下载已完成的应用"), self.completedPage
+            self.tr("暂无下载已完成的应用"), self.completedPage
         )
         self.completedPageLayout.addWidget(self.completedInfoLabel)
         self.completedPage.setObjectName("completedPage")
@@ -44,9 +48,7 @@ class DownloadInterface(ScrollArea):
         # 失败页面
         self.failedPage = QWidget(self)
         self.failedPageLayout = QVBoxLayout(self.failedPage)
-        self.failedInfoLabel = QLabel(
-            self.tr("这里显示下载失败的应用"), self.failedPage
-        )
+        self.failedInfoLabel = QLabel(self.tr("暂无下载失败的应用"), self.failedPage)
         self.failedPageLayout.addWidget(self.failedInfoLabel)
         self.failedPage.setObjectName("failedPage")
 
@@ -57,7 +59,9 @@ class DownloadInterface(ScrollArea):
         self.addSubInterface(
             self.completedPage, "completedPage", self.tr("下载完成"), FIF.COMPLETED
         )
-        self.addSubInterface(self.failedPage, "failedPage", self.tr("下载失败"), FIF.INFO)
+        self.addSubInterface(
+            self.failedPage, "failedPage", self.tr("下载失败"), FIF.INFO
+        )
 
         self.__initWidget()
         self.__connectSignalToSlot()
@@ -92,11 +96,28 @@ class DownloadInterface(ScrollArea):
         self.__initLayout()
 
     def __initLayout(self):
-        self.vBoxLayout.setSpacing(28)
-        self.vBoxLayout.setContentsMargins(36, 10, 36, 0)
-        self.vBoxLayout.addWidget(self.segmentedWidget, 0, Qt.AlignCenter)
-        self.vBoxLayout.addWidget(self.stackedWidget)
+        self.vBoxLayout.setContentsMargins(36, 0, 36, 0)
+        self.vBoxLayout.addSpacing(36)
+        self.vBoxLayout.addWidget(self.titleLabel, 0, Qt.AlignLeft)
+        self.vBoxLayout.addSpacing(10)
+        self.vBoxLayout.addWidget(self.segmentedWidget, 0, Qt.AlignLeft)
+        self.vBoxLayout.addWidget(self.stackedWidget, 1, Qt.AlignHCenter)
         self.vBoxLayout.addStretch(1)
+
+        # 让每个子页面内容垂直居中
+        self.downloadingPageLayout.addStretch(1)
+        self.downloadingPageLayout.addWidget(
+            self.downloadingInfoLabel, 0, Qt.AlignHCenter
+        )
+        self.downloadingPageLayout.addStretch(1)
+
+        self.completedPageLayout.addStretch(1)
+        self.completedPageLayout.addWidget(self.completedInfoLabel, 0, Qt.AlignHCenter)
+        self.completedPageLayout.addStretch(1)
+
+        self.failedPageLayout.addStretch(1)
+        self.failedPageLayout.addWidget(self.failedInfoLabel, 0, Qt.AlignHCenter)
+        self.failedPageLayout.addStretch(1)
 
     def __connectSignalToSlot(self):
         self.segmentedWidget.currentItemChanged.connect(
