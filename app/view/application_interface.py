@@ -73,8 +73,8 @@ class ApplicationInterface(ScrollArea):
         self.__initLayout()
 
     def __initLayout(self):
-        self.vBoxLayout.setSpacing(28)
         self.vBoxLayout.setContentsMargins(36, 10, 36, 0)
+        self.vBoxLayout.addSpacing(24)
         self.vBoxLayout.addWidget(self.segmentedWidget, 0, Qt.AlignCenter)
         self.vBoxLayout.addWidget(self.stackedWidget)
         self.vBoxLayout.addStretch(1)
