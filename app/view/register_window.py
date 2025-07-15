@@ -144,6 +144,7 @@ class RegisterWindow(Window):
                 self.tr('请检查用户名或密码是否正确'),
                 position=InfoBarPosition.TOP,
                 duration=2000,
+                isClosable=False,
                 parent=self.window()
             )
         else:
@@ -151,6 +152,7 @@ class RegisterWindow(Window):
                 self.tr("登录成功"),
                 self.tr('欢迎回来，') + username,
                 position=InfoBarPosition.TOP,
+                isClosable=False,
                 parent=self.window()
             )
 

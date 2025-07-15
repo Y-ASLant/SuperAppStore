@@ -14,6 +14,7 @@ from ..common.config import cfg
 from ..common.icon import Icon
 from ..common.signal_bus import signalBus
 from ..common import resource
+from ..utils.update import UpdateManager
 
 
 class MainWindow(MSFluentWindow):
@@ -27,17 +28,28 @@ class MainWindow(MSFluentWindow):
         self.downloadInterface = DownloadInterface(self)
         self.settingInterface = SettingInterface(self)
 
+        # 初始化更新管理器
+        self.updateManager = UpdateManager(self)
+        
         self.connectSignalToSlot()
 
         # add items to navigation interface
         self.initNavigation()
 
+        # 如果配置中启用了启动时检查更新，则在启动时检查更新
+        if cfg.get(cfg.checkUpdateAtStartUp):
+            self.checkUpdate()
+
     def connectSignalToSlot(self):
         signalBus.micaEnableChanged.connect(self.setMicaEffectEnabled)
+        # 连接检查更新信号
+        signalBus.checkUpdateSig.connect(self.checkUpdate)
+
+    def checkUpdate(self):
+        """检查更新"""
+        self.updateManager.check_for_updates()
 
     def initNavigation(self):
-        # self.navigationInterface.setAcrylicEnabled(True)
-
         # TODO: add navigation items
         self.addSubInterface(
             self.homeInterface, FIF.HOME, self.tr("首页"), FIF.HOME_FILL

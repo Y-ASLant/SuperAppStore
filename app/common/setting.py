@@ -7,7 +7,8 @@ DEBUG = "__compiled__" not in globals()
 
 YEAR = 2025
 AUTHOR = "ASLant"
-VERSION = "v1.0.0"
+VERSION = "1.0.0"
+UPDATE_DATE = "2025.07.16"
 APP_NAME = "SuperAppStore"
 HELP_URL = "https://aslant.top"
 REPO_URL = "https://aslant.top"

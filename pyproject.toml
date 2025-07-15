@@ -19,5 +19,6 @@ dependencies = [
     "pyqt5-sip==12.17.0",
     "pywin32==310",
     "pywin32-ctypes==0.2.3",
+    "requests>=2.32.4",
     "setuptools==80.9.0",
 ]

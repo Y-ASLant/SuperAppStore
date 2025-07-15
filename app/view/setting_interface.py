@@ -162,6 +162,7 @@ class SettingInterface(ScrollArea):
             self.tr('Updated successfully'),
             self.tr('Configuration takes effect after restart'),
             duration=1500,
+            isClosable=False,
             parent=self
         )
 
