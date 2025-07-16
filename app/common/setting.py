@@ -14,6 +14,9 @@ HELP_URL = "https://aslant.top"
 REPO_URL = "https://aslant.top"
 FEEDBACK_URL = "https://aslant.top"
 DOC_URL = "https://qfluentwidgets.com/"
+APPS_LIST_URL = "https://aslant.top/Demo_1/apps.json"
+VERSION_URL = "https://aslant.top/Demo_1/version.json"
 
 CONFIG_FOLDER = Path('AppData').absolute()
 CONFIG_FILE = CONFIG_FOLDER / "config.json"
+APPS_FILE = CONFIG_FOLDER / "apps.json"

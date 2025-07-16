@@ -7,7 +7,7 @@ import subprocess
 from PyQt5.QtCore import QObject, Qt, QPoint, QThread, pyqtSignal
 from qfluentwidgets import (MessageBox, InfoBar, InfoBarPosition, InfoBarManager, 
                          ProgressBar)
-from ..common.setting import VERSION, UPDATE_DATE
+from ..common.setting import VERSION, UPDATE_DATE, VERSION_URL
 
 
 class DownloadThread(QThread):
@@ -94,7 +94,7 @@ class UpdateChecker(QObject):
 
     def __init__(self):
         super().__init__()
-        self.version_url = "https://aslant.top/Demo_1/version.json"
+        self.version_url = VERSION_URL
         self.current_version = VERSION
         self.current_date = UPDATE_DATE  # 获取当前版本更新日期
 
