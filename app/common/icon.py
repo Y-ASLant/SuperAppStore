@@ -10,6 +10,8 @@ class Icon(FluentIconBase, Enum):
 
     SETTINGS = "Settings"
     SETTINGS_FILLED = "SettingsFilled"
+    BOT_SPARKLE = "BotSparkle"
+    BOT_SPARKLE_FILLED = "BotSparkle_Filled"
 
     def path(self, theme=Theme.AUTO):
         return f":/app/images/icons/{self.value}_{getIconColor(theme)}.svg"

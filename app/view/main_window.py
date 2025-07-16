@@ -10,6 +10,7 @@ from .setting_interface import SettingInterface
 from .home_interface import HomeInterface
 from .application_interface import ApplicationInterface
 from .download_interface import DownloadInterface
+from .custom_interface import CustomInterface
 from ..common.config import cfg
 from ..common.icon import Icon
 from ..common.signal_bus import signalBus
@@ -27,6 +28,7 @@ class MainWindow(MSFluentWindow):
         self.applicationInterface = ApplicationInterface(self)
         self.downloadInterface = DownloadInterface(self)
         self.settingInterface = SettingInterface(self)
+        self.customInterface = CustomInterface(self)
 
         # 初始化更新管理器
         self.updateManager = UpdateManager(self)
@@ -59,6 +61,14 @@ class MainWindow(MSFluentWindow):
         )
         self.addSubInterface(self.downloadInterface, FIF.DOWNLOAD, self.tr("下载"))
 
+        # 添加 BotSparkle_Filled 图标，无任何功能
+        self.addSubInterface(
+            self.customInterface,
+            Icon.BOT_SPARKLE,
+            self.tr("自定义"),
+            Icon.BOT_SPARKLE_FILLED,
+            NavigationItemPosition.BOTTOM,
+        )
         # add custom widget to bottom
         self.addSubInterface(
             self.settingInterface,
