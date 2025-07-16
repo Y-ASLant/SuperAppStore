@@ -6,7 +6,8 @@ from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QStackedWidget
 from qfluentwidgets import FluentIcon as FIF
 
 from ..common.style_sheet import StyleSheet
-from qfluentwidgets import setFont
+from qfluentwidgets import setFont, setTheme
+from ..common.config import cfg
 
 
 class ApplicationInterface(ScrollArea):
@@ -27,6 +28,7 @@ class ApplicationInterface(ScrollArea):
         self.appPage = QWidget(self)
         self.appPageLayout = QVBoxLayout(self.appPage)
         self.appInfoLabel = QLabel(self.tr("这里显示所有可用的应用"), self.appPage)
+        self.appInfoLabel.setObjectName('contentLabel')  # 设置对象名
         self.appPageLayout.addWidget(self.appInfoLabel)
         self.appPage.setObjectName("appPage")
         
@@ -34,6 +36,7 @@ class ApplicationInterface(ScrollArea):
         self.gamePage = QWidget(self)
         self.gamePageLayout = QVBoxLayout(self.gamePage)
         self.gameInfoLabel = QLabel(self.tr("这里显示所有可用的游戏"), self.gamePage)
+        self.gameInfoLabel.setObjectName('contentLabel')  # 设置对象名
         self.gamePageLayout.addWidget(self.gameInfoLabel)
         self.gamePage.setObjectName("gamePage")
         
@@ -62,8 +65,9 @@ class ApplicationInterface(ScrollArea):
         setFont(self.gameInfoLabel, 16, QFont.Weight.Normal)
         self.scrollWidget.setObjectName('scrollWidget')
         self.segmentedWidget.setFixedWidth(200)
+        
+        # 应用样式表
         StyleSheet.SETTING_INTERFACE.apply(self)
-        self.scrollWidget.setStyleSheet("QWidget{background:transparent}")
 
         # 设置默认显示的页面
         self.stackedWidget.setCurrentWidget(self.appPage)
@@ -82,4 +86,13 @@ class ApplicationInterface(ScrollArea):
     def __connectSignalToSlot(self):
         self.segmentedWidget.currentItemChanged.connect(
             lambda k: self.stackedWidget.setCurrentWidget(self.findChild(QWidget, k))
-        ) 
+        )
+        
+        # 连接主题变更信号
+        cfg.themeChanged.connect(self.__onThemeChanged)
+        
+    def __onThemeChanged(self, theme):
+        """处理主题变更"""
+        setTheme(theme)
+        # 重新应用样式表
+        StyleSheet.SETTING_INTERFACE.apply(self) 

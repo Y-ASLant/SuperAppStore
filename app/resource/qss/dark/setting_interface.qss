@@ -13,3 +13,8 @@ QLabel#settingLabel {
     color: white;
 }
 
+QLabel#contentLabel {
+    background-color: transparent;
+    color: white;
+}
+

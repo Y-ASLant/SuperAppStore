@@ -6,7 +6,8 @@ from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QStackedWidget
 from qfluentwidgets import FluentIcon as FIF
 
 from ..common.style_sheet import StyleSheet
-from qfluentwidgets import setFont
+from qfluentwidgets import setFont, setTheme
+from ..common.config import cfg
 
 
 class DownloadInterface(ScrollArea):
@@ -33,6 +34,7 @@ class DownloadInterface(ScrollArea):
         self.downloadingInfoLabel = QLabel(
             self.tr("暂无正在下载的应用"), self.downloadingPage
         )
+        self.downloadingInfoLabel.setObjectName("contentLabel")  # 确保设置对象名
         self.downloadingPageLayout.addWidget(self.downloadingInfoLabel)
         self.downloadingPage.setObjectName("downloadingPage")
 
@@ -42,6 +44,7 @@ class DownloadInterface(ScrollArea):
         self.completedInfoLabel = QLabel(
             self.tr("暂无下载已完成的应用"), self.completedPage
         )
+        self.completedInfoLabel.setObjectName("contentLabel")  # 确保设置对象名
         self.completedPageLayout.addWidget(self.completedInfoLabel)
         self.completedPage.setObjectName("completedPage")
 
@@ -49,6 +52,7 @@ class DownloadInterface(ScrollArea):
         self.failedPage = QWidget(self)
         self.failedPageLayout = QVBoxLayout(self.failedPage)
         self.failedInfoLabel = QLabel(self.tr("暂无下载失败的应用"), self.failedPage)
+        self.failedInfoLabel.setObjectName("contentLabel")  # 确保设置对象名
         self.failedPageLayout.addWidget(self.failedInfoLabel)
         self.failedPage.setObjectName("failedPage")
 
@@ -80,14 +84,19 @@ class DownloadInterface(ScrollArea):
         self.setObjectName("downloadInterface")
 
         # 初始化样式表
+        setFont(self.titleLabel, 24, QFont.Weight.Medium)
         setFont(self.downloadingInfoLabel, 16, QFont.Weight.Normal)
         setFont(self.completedInfoLabel, 16, QFont.Weight.Normal)
         setFont(self.failedInfoLabel, 16, QFont.Weight.Normal)
+        
         self.scrollWidget.setObjectName("scrollWidget")
+        self.titleLabel.setObjectName("settingLabel")  # 使用与settingLabel相同的对象名
+        
         self.segmentedWidget.setFixedWidth(200)
+        
+        # 应用样式表 - 确保在设置所有对象名之后再应用样式表
         StyleSheet.SETTING_INTERFACE.apply(self)
-        self.scrollWidget.setStyleSheet("QWidget{background:transparent}")
-
+        
         # 设置默认显示的页面
         self.stackedWidget.setCurrentWidget(self.downloadingPage)
         self.segmentedWidget.setCurrentItem("downloadingPage")
@@ -123,3 +132,13 @@ class DownloadInterface(ScrollArea):
         self.segmentedWidget.currentItemChanged.connect(
             lambda k: self.stackedWidget.setCurrentWidget(self.findChild(QWidget, k))
         )
+        
+        # 连接主题变更信号
+        cfg.themeChanged.connect(self.__onThemeChanged)
+        
+    def __onThemeChanged(self, theme):
+        """处理主题变更"""
+        # 应用主题
+        setTheme(theme)
+        # 重新应用样式表，确保样式更新
+        StyleSheet.SETTING_INTERFACE.apply(self)
