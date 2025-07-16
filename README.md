@@ -23,6 +23,18 @@ SuperAppStore是一个强大的应用商店平台，专为简化软件获取和�
 - 🛡️ 软件安全性验证
 - 📱 用户友好的界面与操作流程
 
+## 📷 界面展示
+
+<div align="center">
+  <p><em>⚠️ 以下界面仍在开发中，非最终效果 ⚠️</em></p>
+  
+  <img src="./pic/screen_1.png" alt="登录界面" width="90%">
+  <p>登录界面</p>
+  
+  <img src="./pic/screen_5.png" alt="详情界面" width="90%">
+  <p>设置界面</p>
+</div>
+
 ## 🔧 软件源支持
 
 ### 自定义服务器
@@ -76,7 +88,7 @@ uv sync
 uv run main.py
 ```
 
-### 构建独立可执行文件
+### 使用Pyinstaller快速构建独立可执行文件
 
 ```bash
 pyinstaller --name "SuperAppStore" --noconfirm --clean --windowed --onedir --contents-directory Lib --icon="App.ico" main.py
