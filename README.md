@@ -33,6 +33,9 @@ SuperAppStore是一个强大的应用商店平台，专为简化软件获取和�
   
   <img src="./pic/screen_5.png" alt="详情界面" width="90%">
   <p>设置界面</p>
+  
+  <video src="./pic/update.mp4" autoplay loop controls width="90%"></video>
+  <p>更新演示</p>
 </div>
 
 ## 🔧 软件源支持
