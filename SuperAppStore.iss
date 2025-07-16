@@ -17,6 +17,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\SuperAppStore
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
+PrivilegesRequiredOverridesAllowed=commandline dialog
 OutputDir=dist
 OutputBaseFilename={#MyAppName}_V{#MyAppVersion}
 SetupIconFile=App.ico

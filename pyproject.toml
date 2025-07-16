@@ -1,3 +1,6 @@
+﻿[tool.uv]
+required-environments = [ "sys_platform == 'win32'" ]
+
 [project]
 name = "superappstore"
 version = "0.1.0"
@@ -22,3 +25,4 @@ dependencies = [
     "requests>=2.32.4",
     "setuptools==80.9.0",
 ]
+
