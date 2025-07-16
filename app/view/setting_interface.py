@@ -9,7 +9,7 @@ from PyQt5.QtGui import QDesktopServices, QFont
 from PyQt5.QtWidgets import QWidget, QLabel
 
 from ..common.config import cfg, isWin11
-from ..common.setting import HELP_URL, FEEDBACK_URL, AUTHOR, VERSION, YEAR
+from ..common.setting import HELP_URL, REPO_URL, AUTHOR, VERSION, YEAR
 from ..common.signal_bus import signalBus
 from ..common.style_sheet import StyleSheet
 
@@ -179,4 +179,4 @@ class SettingInterface(ScrollArea):
 
         # about
         self.feedbackCard.clicked.connect(
-            lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL)))
+            lambda: QDesktopServices.openUrl(QUrl(REPO_URL)))
