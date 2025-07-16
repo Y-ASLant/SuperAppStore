@@ -1,4 +1,5 @@
 import os
+from app.common.setting import VERSION  # 导入版本号
 
 args = [
     "nuitka",
@@ -13,7 +14,7 @@ args = [
     "--windows-icon-from-ico=App.ico",
     '--windows-company-name="ASLant Top."',
     "--windows-product-name=SuperAppStore",
-    "--product-version=1.0.0",  # 添加固定的产品版本号
+    f"--product-version={VERSION}",  # 从setting中读取版本号
     '--windows-file-description="SuperAppStore"',
     "--output-dir=dist",
     "--output-filename=SuperAppStore.exe",  # 指定输出文件名
