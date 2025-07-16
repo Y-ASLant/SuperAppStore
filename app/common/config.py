@@ -6,7 +6,8 @@ from PyQt5.QtCore import QLocale
 from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, Theme, ConfigSerializer)
 
-from .setting import CONFIG_FILE
+from .setting import CONFIG_FILE, DEFAULT_DOWNLOAD_PATH
+
 
 class Language(Enum):
     """ Language enumeration """
@@ -50,6 +51,9 @@ class Config(QConfig):
 
     # software update
     checkUpdateAtStartUp = ConfigItem("Update", "CheckUpdateAtStartUp", True, BoolValidator())
+    
+    # download settings
+    downloadPath = ConfigItem("Download", "DownloadPath", DEFAULT_DOWNLOAD_PATH)
 
 
 cfg = Config()
