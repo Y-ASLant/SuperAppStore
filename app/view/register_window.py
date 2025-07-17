@@ -74,7 +74,8 @@ class RegisterWindow(Window):
 
         self.setWindowTitle('Super App Store')
         self.setWindowIcon(QIcon(":/app/images/logo.png"))
-        self.resize(1000, 650)
+        self.setFixedSize(1000, 650)  # 使用setFixedSize代替resize来禁止调整窗口大小
+        
 
         if sys.platform == "darwin":
             self.titleBar.minBtn.hide()
@@ -165,8 +166,6 @@ class RegisterWindow(Window):
 
     def _showMainWindow(self):
         self.close()
-        # 移除此处的主题色设置，使用main.py中的全局设置
-
         self.loginSignal.emit()
 
     def systemTitleBarRect(self, size):
