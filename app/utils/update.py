@@ -4,10 +4,10 @@ import os
 from pathlib import Path
 import datetime
 import subprocess
-from PyQt5.QtCore import QObject, Qt, QPoint, QThread, pyqtSignal
-from qfluentwidgets import (MessageBox, InfoBar, InfoBarPosition, InfoBarManager, 
-                         ProgressBar)
+from PyQt5.QtCore import QObject, QPoint, QThread, pyqtSignal
+from qfluentwidgets import (MessageBox, InfoBar, InfoBarManager, ProgressBar)
 from ..common.setting import VERSION, UPDATE_DATE, VERSION_URL
+from .notification import Notification
 
 
 class DownloadThread(QThread):
@@ -243,25 +243,19 @@ class UpdateManager(QObject):
             # 没有更新或检查失败
             if changelog and changelog.startswith("检查更新失败"):
                 # 显示错误信息
-                InfoBar.error(
+                Notification.error(
                     title="检查更新失败",
                     content=changelog,
-                    orient=Qt.Horizontal,
-                    isClosable=False,
-                    position=InfoBarPosition.TOP,
-                    parent=self.parent(),
-                    duration=3000
+                    duration=3000,
+                    parent=self.parent()
                 )
             else:
                 # 显示已是最新版本
-                InfoBar.success(
+                Notification.success(
                     title="检查更新",
                     content="当前已是最新版本！",
-                    orient=Qt.Horizontal,
-                    isClosable=False,
-                    position=InfoBarPosition.TOP,
-                    parent=self.parent(),
-                    duration=3000
+                    duration=3000,
+                    parent=self.parent()
                 )
     
     def _prepare_progress_container(self):

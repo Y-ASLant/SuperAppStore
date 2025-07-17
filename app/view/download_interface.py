@@ -1,20 +1,20 @@
 # coding:utf-8
-from qfluentwidgets import ScrollArea, SegmentedWidget, CardWidget, ProgressBar, InfoBar, InfoBarPosition
+from qfluentwidgets import ScrollArea, SegmentedWidget, CardWidget, ProgressBar
 from PyQt5.QtCore import Qt, QUrl, pyqtSlot, pyqtSignal, QObject
 from PyQt5.QtGui import QFont, QDesktopServices
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QStackedWidget, QHBoxLayout, QSizePolicy
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import TransparentToolButton, MessageBox
 import os
-import urllib.request
+import requests
 import threading
-import time
 import json
 
 from ..common.style_sheet import StyleSheet
 from qfluentwidgets import setFont, setTheme
 from ..common.config import cfg
 from ..common.setting import APPS_FILE, DOWNLOADED_APPS_FILE
+from ..utils.notification import Notification
 
 
 class DownloadSignals(QObject):
@@ -400,54 +400,54 @@ class DownloadInterface(ScrollArea):
                 except Exception:
                     pass  # 如果无法删除，会覆盖写入
             
-            # 创建请求对象
-            req = urllib.request.Request(
-                url,
-                headers={
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                }
-            )
+            # 设置请求头
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
             
-            # 打开URL
-            response = urllib.request.urlopen(req)
-            file_size = int(response.info().get('Content-Length', 0))
-            
-            # 确保目录存在
-            os.makedirs(os.path.dirname(local_path), exist_ok=True)
-            
-            # 已下载的数据块数量
-            downloaded = 0
-            block_size = 1024 * 8
-            
-            # 保存文件名
-            task_card.setFilename(filename)
-            
-            # 打开文件准备写入
-            with open(local_path, 'wb') as f:
-                # 读取和写入数据块
-                while True:
-                    buffer = response.read(block_size)
-                    if not buffer:
-                        break
-                    
-                    # 写入文件
-                    f.write(buffer)
-                    
-                    # 更新下载进度
-                    downloaded += len(buffer)
-                    progress = int(downloaded / file_size * 100) if file_size > 0 else 100
-                    
-                    # 使用信号槽更新UI，而不是直接调用方法
-                    self.signals.updateProgressSignal.emit(app_id, progress)
-                    
-                    # 为了不过于频繁更新UI，添加一个小的休眠
-                    time.sleep(0.01)
+            # 使用requests流式下载文件
+            with requests.get(url, headers=headers, stream=True, timeout=30) as response:
+                # 确保请求成功
+                response.raise_for_status()
+                
+                # 获取文件大小
+                file_size = int(response.headers.get('Content-Length', 0))
+                
+                # 确保目录存在
+                os.makedirs(os.path.dirname(local_path), exist_ok=True)
+                
+                # 保存文件名
+                task_card.setFilename(filename)
+                
+                # 已下载的数据大小
+                downloaded = 0
+                # 增大块大小到 1MB，提高下载效率
+                chunk_size = 1024 * 1024
+                
+                # 打开文件准备写入
+                with open(local_path, 'wb') as f:
+                    # 读取和写入数据块
+                    for chunk in response.iter_content(chunk_size=chunk_size):
+                        if chunk:  # 过滤keep-alive新块
+                            # 写入文件
+                            f.write(chunk)
+                            
+                            # 更新下载进度
+                            downloaded += len(chunk)
+                            progress = int(downloaded / file_size * 100) if file_size > 0 else 100
+                            
+                            # 使用信号槽更新UI
+                            self.signals.updateProgressSignal.emit(app_id, progress)
             
             # 下载完成后，发送完成信号
             self.signals.moveToCompletedSignal.emit(app_id)
             
+        except requests.RequestException as e:
+            print(f"下载请求出错: {str(e)}")
+            # 发送失败信号
+            self.signals.moveToFailedSignal.emit(app_id, str(e))
         except Exception as e:
-            print(f"下载出错: {str(e)}")
+            print(f"下载过程出错: {str(e)}")
             # 发送失败信号
             self.signals.moveToFailedSignal.emit(app_id, str(e))
 
@@ -601,22 +601,12 @@ class DownloadInterface(ScrollArea):
         
     def __showNotification(self, title, content, type_='info', duration=2000):
         """显示通知的统一方法"""
-        notification_func = InfoBar.info  # 默认为普通提示
-        if type_ == 'success':
-            notification_func = InfoBar.success
-        elif type_ == 'error':
-            notification_func = InfoBar.error
-        elif type_ == 'warning':
-            notification_func = InfoBar.warning
-            
-        notification_func(
+        Notification.show(
             title=self.tr(title),
             content=content,
-            orient=Qt.Horizontal,
-            isClosable=False,
-            position=InfoBarPosition.TOP,
+            type_=type_,
             duration=duration,
-            parent=self
+            parent=self.window()
         )
         
     def __startDownloadThread(self, app_data, app_id, task_card):

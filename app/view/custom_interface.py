@@ -4,11 +4,12 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
 from PyQt5.QtGui import QFont
 
 from qfluentwidgets import (ScrollArea, SubtitleLabel, BodyLabel, setFont, setTheme, 
-                            PrimaryPushButton, LineEdit, InfoBar, InfoBarPosition)
+                            PrimaryPushButton, LineEdit)
 
 from ..common.style_sheet import StyleSheet
 from ..common.config import cfg
 from ..common.setting import DEFAULT_DOWNLOAD_PATH
+from ..utils.notification import Notification
 
 
 class CustomInterface(ScrollArea):
@@ -128,12 +129,9 @@ class CustomInterface(ScrollArea):
             self.downloadPathEdit.setText(folder_path)
             
             # 显示成功提示
-            InfoBar.success(
+            Notification.success(
                 self.tr('设置成功'),
                 self.tr('下载路径已更新'),
-                orient=Qt.Horizontal,
-                isClosable=False,
-                position=InfoBarPosition.TOP,
                 duration=2000,
                 parent=self
             )
@@ -145,12 +143,9 @@ class CustomInterface(ScrollArea):
         self.downloadPathEdit.setText(DEFAULT_DOWNLOAD_PATH)
         
         # 显示提示
-        InfoBar.success(
+        Notification.success(
             self.tr('重置成功'),
             self.tr('下载路径已重置为默认值'),
-            orient=Qt.Horizontal,
-            isClosable=False,
-            position=InfoBarPosition.TOP,
             duration=2000,
             parent=self
         ) 

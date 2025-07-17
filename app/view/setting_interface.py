@@ -3,7 +3,6 @@ from qfluentwidgets import (SwitchSettingCard, HyperlinkCard, PrimaryPushSetting
                             ComboBoxSettingCard, ExpandLayout, setTheme, setFont)
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import SettingCardGroup as CardGroup
-from qfluentwidgets import InfoBar
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QDesktopServices, QFont
 from PyQt5.QtWidgets import QWidget, QLabel
@@ -12,6 +11,7 @@ from ..common.config import cfg, isWin11
 from ..common.setting import HELP_URL, REPO_URL, AUTHOR, VERSION, YEAR
 from ..common.signal_bus import signalBus
 from ..common.style_sheet import StyleSheet
+from ..utils.notification import Notification
 
 
 class SettingCardGroup(CardGroup):
@@ -158,7 +158,7 @@ class SettingInterface(ScrollArea):
 
     def _showRestartTooltip(self):
         """ show restart tooltip """
-        InfoBar.success(
+        Notification.success(
             self.tr('Updated successfully'),
             self.tr('Configuration takes effect after restart'),
             duration=1500,

@@ -5,11 +5,11 @@ from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout
 
 from qfluentwidgets import (MSFluentTitleBar, isDarkTheme, ImageLabel, BodyLabel, LineEdit,
-                            PasswordLineEdit, PrimaryPushButton, CheckBox, InfoBar,
-                            InfoBarPosition)
-from ..common import resource
+                            PasswordLineEdit, PrimaryPushButton, CheckBox)
 from ..common.license_service import LicenseService
 from ..common.config import cfg
+from ..common import resource
+from ..utils.notification import Notification
 
 
 def isWin11():
@@ -139,20 +139,17 @@ class RegisterWindow(Window):
 
         # 简单的登录验证，可以替换为实际验证逻辑
         if not username or not password or password != "123456":
-            InfoBar.error(
+            Notification.error(
                 self.tr("登录失败"),
                 self.tr('请检查用户名或密码是否正确'),
-                position=InfoBarPosition.TOP,
                 duration=2000,
-                isClosable=False,
                 parent=self.window()
             )
         else:
-            InfoBar.success(
+            Notification.success(
                 self.tr("登录成功"),
                 self.tr('欢迎回来，') + username,
-                position=InfoBarPosition.TOP,
-                isClosable=False,
+                duration=2000,
                 parent=self.window()
             )
 

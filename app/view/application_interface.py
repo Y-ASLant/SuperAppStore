@@ -1,19 +1,19 @@
 # coding:utf-8
 from qfluentwidgets import (
-    ScrollArea, SegmentedWidget, CardWidget, SearchLineEdit, ComboBox, InfoBar, InfoBarPosition,
-    TransparentToolButton, BodyLabel, CaptionLabel, StrongBodyLabel, SubtitleLabel
+    ScrollArea, SegmentedWidget, CardWidget, SearchLineEdit, ComboBox, InfoBarPosition,
+    TransparentToolButton, BodyLabel, CaptionLabel, StrongBodyLabel, SubtitleLabel, ToolButton,
+    FluentIcon as FIF, setTheme
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget
-from qfluentwidgets import FluentIcon as FIF
 import json
 import os
 
 from ..common.style_sheet import StyleSheet
-from qfluentwidgets import setTheme
 from ..common.config import cfg
-from ..common.signal_bus import signalBus
 from ..common.setting import APPS_FILE, DOWNLOADED_APPS_FILE
+from ..common.signal_bus import signalBus
+from ..utils.notification import Notification
 
 
 class AppCard(CardWidget):
@@ -95,6 +95,7 @@ class ApplicationInterface(ScrollArea):
         super().__init__(parent=parent)
         self.scrollWidget = QWidget()
         self.vBoxLayout = QVBoxLayout(self.scrollWidget)
+        self.parent = parent  # 保存父窗口引用
         
         # 应用和游戏数据
         self.apps = []
@@ -130,8 +131,14 @@ class ApplicationInterface(ScrollArea):
         self.appSortComboBox.setCurrentIndex(0)
         self.appSortComboBox.currentIndexChanged.connect(self.__onAppSortOptionChanged)
         
+        # 添加刷新按钮
+        self.refreshButton = ToolButton(FIF.SYNC)
+        self.refreshButton.setToolTip(self.tr("刷新应用列表"))
+        self.refreshButton.clicked.connect(self.__onRefreshClicked)
+        
         self.appControlLayout.addWidget(self.appSearchEdit, 1)
         self.appControlLayout.addWidget(self.appSortComboBox)
+        self.appControlLayout.addWidget(self.refreshButton)
         
         # 应用卡片列表
         self.appListLayout = QVBoxLayout()
@@ -228,15 +235,25 @@ class ApplicationInterface(ScrollArea):
         try:
             # 读取应用数据
             if not os.path.exists(APPS_FILE):
-                self.__showErrorNotification("应用列表文件不存在")
-                return
-                
-            with open(APPS_FILE, 'r', encoding='utf-8') as f:
-                apps = json.load(f)
+                self.__showErrorNotification("应用列表文件不存在，尝试创建...")
+                # 如果文件不存在，创建一个空的应用列表文件
+                try:
+                    os.makedirs(os.path.dirname(APPS_FILE), exist_ok=True)
+                    with open(APPS_FILE, 'w', encoding='utf-8') as f:
+                        json.dump([], f)
+                    self.__showSuccessNotification("已创建空的应用列表文件，请刷新或重启应用")
+                    # 使用空列表继续
+                    apps = []
+                except Exception as e:
+                    self.__showErrorNotification(f"创建应用列表文件失败: {e}")
+                    return
+            else:
+                with open(APPS_FILE, 'r', encoding='utf-8') as f:
+                    apps = json.load(f)
             
             # 分类应用和游戏
-            self.apps = [app for app in apps if app['category'] == '应用']
-            self.games = [app for app in apps if app['category'] == '游戏']
+            self.apps = [app for app in apps if app.get('category') == '应用']
+            self.games = [app for app in apps if app.get('category') == '游戏']
             
             # 保存原始顺序
             self.original_apps_order = self.apps.copy()
@@ -331,26 +348,26 @@ class ApplicationInterface(ScrollArea):
     
     def __showErrorNotification(self, message):
         """显示错误通知"""
-        InfoBar.error(
+        Notification.error(
             title=self.tr('错误'),
             content=message,
             orient=Qt.Horizontal,
             isClosable=False,
             position=InfoBarPosition.TOP,
             duration=3000,
-            parent=self
+            parent=self.window()
         )
         
     def __showSuccessNotification(self, message):
         """显示成功通知"""
-        InfoBar.success(
+        Notification.success(
             title=self.tr('成功'),
             content=message,
             orient=Qt.Horizontal,
             isClosable=False,
             position=InfoBarPosition.TOP,
             duration=2000,
-            parent=self
+            parent=self.window()
         )
             
     def __onAppSearchTextChanged(self, text):
@@ -417,6 +434,16 @@ class ApplicationInterface(ScrollArea):
         except Exception as e:
             self.__showErrorNotification(f"下载 {app_data['name']} 时出错: {str(e)}")
         
+    def __onRefreshClicked(self):
+        """处理刷新按钮点击事件"""
+        # 如果父窗口存在并且有refreshAppsList方法，调用它
+        if hasattr(self.parent, 'refreshAppsList'):
+            self.parent.refreshAppsList()
+        else:
+            # 否则只重新加载本地文件
+            self.__loadApps()
+            self.__showSuccessNotification(self.tr("应用列表已刷新"))
+
     def __onThemeChanged(self, theme):
         """处理主题变更"""
         setTheme(theme)

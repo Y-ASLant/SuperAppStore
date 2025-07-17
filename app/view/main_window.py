@@ -1,30 +1,34 @@
-# coding: utf-8
+# coding:utf-8
+import os
+import requests
+
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWidgets import QApplication
-import requests
-import os
 
-from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen
-from qfluentwidgets import FluentIcon as FIF
-
-from .setting_interface import SettingInterface
+from qfluentwidgets import (NavigationItemPosition, MSFluentWindow,
+                           SplashScreen, FluentIcon as FIF, InfoBarPosition)
 from .home_interface import HomeInterface
+from .setting_interface import SettingInterface
 from .application_interface import ApplicationInterface
 from .download_interface import DownloadInterface
 from .custom_interface import CustomInterface
 from ..common.config import cfg
 from ..common.icon import Icon
-from ..common.signal_bus import signalBus
 from ..common import resource
+from ..common.signal_bus import signalBus
 from ..common.setting import APPS_LIST_URL, CONFIG_FOLDER, APPS_FILE
 from ..utils.update import UpdateManager
+from ..utils.notification import Notification
 
 
 class MainWindow(MSFluentWindow):
     def __init__(self):
         super().__init__()
         self.initWindow()
+
+        # 获取应用列表
+        self.fetchAppsList()
 
         # TODO: create sub interface
         self.homeInterface = HomeInterface(self)
@@ -40,9 +44,6 @@ class MainWindow(MSFluentWindow):
 
         # add items to navigation interface
         self.initNavigation()
-
-        # 获取应用列表
-        self.fetchAppsList()
         
         # 同步两个界面的下载记录
         self.syncDownloadRecords()
@@ -50,6 +51,26 @@ class MainWindow(MSFluentWindow):
         # 如果配置中启用了启动时检查更新，则在启动时检查更新
         if cfg.get(cfg.checkUpdateAtStartUp):
             self.checkUpdate()
+
+    def refreshAppsList(self):
+        """重新获取应用列表并刷新应用界面"""
+        # 先获取应用列表
+        self.fetchAppsList()
+        
+        # 然后重新加载应用界面
+        if hasattr(self, 'applicationInterface'):
+            self.applicationInterface._ApplicationInterface__loadApps()
+            self.__showInfoMessage("应用列表已刷新")
+            
+    def __showInfoMessage(self, message):
+        """显示信息通知"""
+        Notification.info(
+            title=self.tr("提示"),
+            content=self.tr(message),
+            duration=2000,
+            parent=self,
+            position=InfoBarPosition.TOP_RIGHT
+        )
 
     def connectSignalToSlot(self):
         signalBus.micaEnableChanged.connect(self.setMicaEffectEnabled)
