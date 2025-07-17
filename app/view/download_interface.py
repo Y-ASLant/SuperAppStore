@@ -13,7 +13,7 @@ import json
 from ..common.style_sheet import StyleSheet
 from qfluentwidgets import setFont, setTheme
 from ..common.config import cfg
-from ..common.setting import APPS_FILE, DOWNLOADED_APPS_FILE
+from ..common.setting import APPS_FILE, DOWNLOADED_APPS_FILE, get_download_path
 from ..utils.notification import Notification
 
 
@@ -36,7 +36,6 @@ class DownloadTaskCard(CardWidget):
         super().__init__(parent)
         self.app_data = app_data
         self.vBoxLayout = QVBoxLayout(self)
-        self.download_path = cfg.downloadPath.value
         self.filename = ""
         self.local_file_path = ""
         self.is_downloaded = False
@@ -115,7 +114,7 @@ class DownloadTaskCard(CardWidget):
             
             # 设置本地路径（确保路径正确）
             if not self.local_file_path and self.filename:
-                self.local_file_path = os.path.join(self.download_path, self.filename)
+                self.local_file_path = os.path.join(get_download_path(), self.filename)
                 
             # 显示所有操作按钮
             if os.path.exists(self.local_file_path):
@@ -135,7 +134,7 @@ class DownloadTaskCard(CardWidget):
     def setFilename(self, filename):
         """设置下载的文件名"""
         self.filename = filename
-        self.local_file_path = os.path.join(self.download_path, filename)
+        self.local_file_path = os.path.join(get_download_path(), filename)
     
     def _setButtonsVisible(self, visible=True):
         """设置所有按钮的可见性"""
@@ -144,17 +143,34 @@ class DownloadTaskCard(CardWidget):
     
     def _handleFile(self):
         """处理打开文件"""
-        if self.is_downloaded and os.path.exists(self.local_file_path):
+        # 获取最新的文件路径
+        current_path = os.path.join(get_download_path(), self.filename)
+        if self.is_downloaded and os.path.exists(current_path):
+            QDesktopServices.openUrl(QUrl.fromLocalFile(current_path))
+        elif self.is_downloaded and os.path.exists(self.local_file_path):
+            # 尝试使用原始保存的路径
             QDesktopServices.openUrl(QUrl.fromLocalFile(self.local_file_path))
     
     def _handleFolder(self):
         """处理打开文件夹"""
-        if os.path.exists(self.download_path):
-            QDesktopServices.openUrl(QUrl.fromLocalFile(self.download_path))
+        # 获取最新的下载路径
+        current_path = get_download_path()
+        if os.path.exists(current_path):
+            QDesktopServices.openUrl(QUrl.fromLocalFile(current_path))
             
     def _confirmDeleteFile(self):
         """确认删除文件"""
-        if not self.is_downloaded or not os.path.exists(self.local_file_path):
+        # 获取最新的文件路径
+        current_path = os.path.join(get_download_path(), self.filename)
+        file_exists = os.path.exists(current_path) or os.path.exists(self.local_file_path)
+        
+        # 如果文件不存在但记录存在，直接删除记录
+        if not file_exists and self.is_downloaded:
+            self._deleteFile()
+            return
+            
+        # 如果没有下载完成，直接返回
+        if not self.is_downloaded:
             return
             
         # 弹出确认对话框
@@ -170,7 +186,18 @@ class DownloadTaskCard(CardWidget):
     def _deleteFile(self):
         """执行删除文件操作"""
         try:
-            os.remove(self.local_file_path)
+            # 获取最新的文件路径
+            current_path = os.path.join(get_download_path(), self.filename)
+            
+            # 如果新路径存在文件，删除它
+            if os.path.exists(current_path):
+                os.remove(current_path)
+            # 如果原始路径存在文件，删除它
+            elif os.path.exists(self.local_file_path):
+                os.remove(self.local_file_path)
+                
+            # 无论文件是否存在，都更新UI状态并发出信号
+            self.local_file_path = ""
             self.statusLabel.setText(self.tr("文件已删除"))
             self.buttons['open_file'].setVisible(False)
             self.buttons['delete_file'].setVisible(False)
@@ -178,6 +205,7 @@ class DownloadTaskCard(CardWidget):
             
             # 发出删除文件信号
             self.deleteFileSignal.emit(self.app_data)
+                
         except Exception as e:
             # 删除失败
             MessageBox(
@@ -203,10 +231,8 @@ class DownloadInterface(ScrollArea):
         self.signals.moveToCompletedSignal.connect(self._moveToCompleted)
         self.signals.moveToFailedSignal.connect(self._moveToFailed)
         
-        # 下载路径
-        self.download_path = cfg.downloadPath.value
         # 确保下载目录存在
-        os.makedirs(self.download_path, exist_ok=True)
+        os.makedirs(get_download_path(), exist_ok=True)
         
         # 存储已下载应用ID
         self.downloaded_app_ids = set()
@@ -390,14 +416,16 @@ class DownloadInterface(ScrollArea):
         
     def _startDownloadThread(self, app_data, app_id, task_card):
         """启动下载线程的通用方法"""
-        # 获取文件名
-        filename = ""
-        if app_data.get('download_url'):
-            filename = os.path.basename(app_data['download_url'].split('?')[0])
-            if not filename:
-                filename = f"{app_data['name']}.exe"
+        # 获取文件名，格式为name_version
+        version = app_data.get('version', '')
+        name = app_data['name']
+        format = app_data.get('format', 'exe')  # 从JSON中获取格式，默认为exe
+        
+        # 构建文件名为name_version.format格式
+        if version:
+            filename = f"{name}_{version}.{format}"
         else:
-            filename = f"{app_data['name']}.exe"
+            filename = f"{name}.{format}"
         
         # 设置文件名
         task_card.setFilename(filename)
@@ -418,7 +446,9 @@ class DownloadInterface(ScrollArea):
             
     def _downloadFile(self, url, filename, app_id):
         """下载文件"""
-        local_path = os.path.join(self.download_path, filename)
+        # 获取最新的下载路径
+        download_path = get_download_path()
+        local_path = os.path.join(download_path, filename)
         task_card = self.downloadingTasks.get(app_id)
         
         if not task_card:
@@ -549,16 +579,19 @@ class DownloadInterface(ScrollArea):
                 for app in all_apps:
                     app_identifier = app.get('id', app['name'])
                     if app_identifier == app_id:
-                        # 检查本地是否有对应的下载文件
-                        filename = ""
-                        if app.get('download_url'):
-                            filename = os.path.basename(app['download_url'].split('?')[0])
-                            if not filename:
-                                filename = f"{app['name']}.exe"
+                        # 构建文件名为name_version.format格式
+                        name = app['name']
+                        version = app.get('version', '')
+                        format = app.get('format', 'exe')  # 从JSON中获取格式，默认为exe
+                        
+                        if version:
+                            filename = f"{name}_{version}.{format}"
                         else:
-                            filename = f"{app['name']}.exe"
+                            filename = f"{name}.{format}"
                             
-                        local_path = os.path.join(self.download_path, filename)
+                        # 获取当前下载路径
+                        download_path = get_download_path()
+                        local_path = os.path.join(download_path, filename)
                         
                         # 如果文件存在，添加到已完成列表
                         if os.path.exists(local_path):

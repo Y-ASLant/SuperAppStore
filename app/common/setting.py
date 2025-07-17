@@ -44,4 +44,15 @@ def get_default_download_path():
     # 备用方案: 使用用户主目录下的Downloads文件夹
     return os.path.join(os.path.expanduser("~"), "Downloads")
 
+# 将默认下载路径修改为函数，每次调用时获取最新的配置
+def get_download_path():
+    """获取当前配置的下载路径"""
+    try:
+        from .config import cfg
+        return cfg.downloadPath.value
+    except (ImportError, AttributeError):
+        # 如果配置尚未加载，则返回默认值
+        return get_default_download_path()
+
+# 保留原始的默认下载路径常量，用于重置操作
 DEFAULT_DOWNLOAD_PATH = get_default_download_path()

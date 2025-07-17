@@ -4,7 +4,7 @@ from app.common.setting import VERSION  # 导入版本号
 args = [
     "nuitka",
     "--standalone",
-    "--windows-console-mode=force",  # force显示控制台 disable不显示控制台
+    "--windows-console-mode=disable",  # force显示控制台 disable不显示控制台
     "--enable-plugin=pyqt5",
     "--include-qt-plugins=sensible,sqldrivers",
     "--assume-yes-for-downloads",
