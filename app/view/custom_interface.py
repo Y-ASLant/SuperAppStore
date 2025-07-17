@@ -1,14 +1,12 @@
 # coding: utf-8
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PyQt5.QtGui import QFont
 
-from qfluentwidgets import (ScrollArea, SubtitleLabel, BodyLabel, setFont, setTheme, 
-                            PrimaryPushButton, LineEdit, InfoBar, InfoBarPosition)
+from qfluentwidgets import ScrollArea, SimpleCardWidget, SubtitleLabel, BodyLabel, setFont, setTheme
 
 from ..common.style_sheet import StyleSheet
 from ..common.config import cfg
-from ..common.setting import DEFAULT_DOWNLOAD_PATH
 
 
 class CustomInterface(ScrollArea):
@@ -26,40 +24,14 @@ class CustomInterface(ScrollArea):
         self.scrollWidget.setObjectName("scrollWidget")
 
         # 创建界面元素
-        self.titleLabel = SubtitleLabel(self.tr("自定义设置"), self)
+        self.titleLabel = SubtitleLabel(self.tr("自定义界面"), self)
         self.titleLabel.setObjectName("customInterfaceTitle")
         
         # 添加说明文字
         self.descriptionLabel = BodyLabel(
-            self.tr("在这里可以自定义软件的各项设置"), 
+            self.tr("这是一个空白的自定义界面"), 
             self
         )
-        
-        # 下载路径设置
-        self.downloadPathLabel = SubtitleLabel(self.tr("下载路径设置"), self)
-        self.downloadPathLabel.setObjectName("downloadPathLabel")
-        
-        # 下载路径说明
-        self.downloadPathDescriptionLabel = BodyLabel(
-            self.tr("设置应用下载的默认保存位置"), 
-            self
-        )
-        
-        # 下载路径输入框和按钮
-        self.downloadPathLayout = QHBoxLayout()
-        self.downloadPathEdit = LineEdit(self)
-        self.downloadPathEdit.setText(cfg.downloadPath.value)
-        self.downloadPathEdit.setReadOnly(True)
-        
-        self.browseButton = PrimaryPushButton(self.tr("浏览"), self)
-        self.browseButton.clicked.connect(self.__onBrowseButtonClicked)
-        
-        self.resetButton = PrimaryPushButton(self.tr("重置"), self)
-        self.resetButton.clicked.connect(self.__onResetButtonClicked)
-        
-        self.downloadPathLayout.addWidget(self.downloadPathEdit)
-        self.downloadPathLayout.addWidget(self.browseButton)
-        self.downloadPathLayout.addWidget(self.resetButton)
          
         # 初始化界面
         self.__initWidget()
@@ -77,8 +49,6 @@ class CustomInterface(ScrollArea):
         # 设置字体
         setFont(self.titleLabel, 23, QFont.Weight.DemiBold)
         setFont(self.descriptionLabel, 16, QFont.Weight.Normal)
-        setFont(self.downloadPathLabel, 18, QFont.Weight.DemiBold)
-        setFont(self.downloadPathDescriptionLabel, 14, QFont.Weight.Normal)
         
         # 应用样式表
         StyleSheet.SETTING_INTERFACE.apply(self)
@@ -92,15 +62,7 @@ class CustomInterface(ScrollArea):
         self.vBoxLayout.addWidget(self.titleLabel)
         self.vBoxLayout.addSpacing(10)
         self.vBoxLayout.addWidget(self.descriptionLabel)
-        self.vBoxLayout.addSpacing(30)
-        
-        # 添加下载路径设置
-        self.vBoxLayout.addWidget(self.downloadPathLabel)
-        self.vBoxLayout.addSpacing(5)
-        self.vBoxLayout.addWidget(self.downloadPathDescriptionLabel)
-        self.vBoxLayout.addSpacing(10)
-        self.vBoxLayout.addLayout(self.downloadPathLayout)
-        
+        self.vBoxLayout.addSpacing(20)
         self.vBoxLayout.addStretch(1)
         
     def __connectSignalToSlot(self):
@@ -112,45 +74,4 @@ class CustomInterface(ScrollArea):
         """处理主题变更"""
         setTheme(theme)
         # 重新应用样式表
-        StyleSheet.SETTING_INTERFACE.apply(self)
-        
-    def __onBrowseButtonClicked(self):
-        """浏览按钮点击事件"""
-        folder_path = QFileDialog.getExistingDirectory(
-            self, 
-            self.tr("选择下载文件夹"), 
-            cfg.downloadPath.value
-        )
-        
-        if folder_path:
-            # 更新下载路径配置
-            cfg.set(cfg.downloadPath, folder_path)
-            self.downloadPathEdit.setText(folder_path)
-            
-            # 显示成功提示
-            InfoBar.success(
-                self.tr('设置成功'),
-                self.tr('下载路径已更新'),
-                orient=Qt.Horizontal,
-                isClosable=False,
-                position=InfoBarPosition.TOP,
-                duration=2000,
-                parent=self
-            )
-    
-    def __onResetButtonClicked(self):
-        """重置按钮点击事件"""
-        # 重置为默认下载路径
-        cfg.set(cfg.downloadPath, DEFAULT_DOWNLOAD_PATH)
-        self.downloadPathEdit.setText(DEFAULT_DOWNLOAD_PATH)
-        
-        # 显示提示
-        InfoBar.success(
-            self.tr('重置成功'),
-            self.tr('下载路径已重置为默认值'),
-            orient=Qt.Horizontal,
-            isClosable=False,
-            position=InfoBarPosition.TOP,
-            duration=2000,
-            parent=self
-        ) 
+        StyleSheet.SETTING_INTERFACE.apply(self) 
