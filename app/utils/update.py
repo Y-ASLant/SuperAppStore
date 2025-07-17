@@ -4,10 +4,26 @@ import os
 from pathlib import Path
 import datetime
 import subprocess
-from PyQt5.QtCore import QObject, QPoint, QThread, pyqtSignal
+import sys
+from PyQt5.QtCore import QObject, QPoint, QThread, pyqtSignal, Qt
+from PyQt5.QtGui import QKeyEvent
+from PyQt5.QtWidgets import QApplication
 from qfluentwidgets import (MessageBox, InfoBar, InfoBarManager, ProgressBar)
 from ..common.setting import VERSION, UPDATE_DATE, VERSION_URL
 from .notification import Notification
+
+
+class CustomMessageBox(MessageBox):
+    """自定义消息框，屏蔽ESC键关闭功能"""
+    
+    def keyPressEvent(self, event: QKeyEvent):
+        """重写keyPressEvent方法，屏蔽ESC键"""
+        # 如果是ESC键，则忽略该事件
+        if event.key() == Qt.Key_Escape:
+            event.ignore()
+        else:
+            # 其他键正常处理
+            super().keyPressEvent(event)
 
 
 class DownloadThread(QThread):
@@ -213,13 +229,13 @@ class UpdateManager(QObject):
             if force_update:
                 title = "发现新版本（强制更新）"
                 content = f"发现新版本 v{version}{remote_date_info}，需要强制更新。\n\n更新内容:\n{changelog}"
-                self.update_dialog = MessageBox(title, content, parent)
+                self.update_dialog = CustomMessageBox(title, content, parent)
                 self.update_dialog.yesButton.setText("立即更新")
                 self.update_dialog.cancelButton.hide()  # 隐藏取消按钮
             else:
                 title = "发现新版本"
                 content = f"发现新版本 v{version}{remote_date_info}，是否更新？\n\n更新内容:\n{changelog}"
-                self.update_dialog = MessageBox(title, content, parent)
+                self.update_dialog = CustomMessageBox(title, content, parent)
                 self.update_dialog.yesButton.setText("立即更新")
                 self.update_dialog.cancelButton.setText("稍后再说")
             
@@ -360,8 +376,13 @@ class UpdateManager(QObject):
                     
                     # 直接启动安装程序
                     try:
-                        # 直接运行exe安装文件
+                        # 直接运行exe安装文件并启动安装程序
                         subprocess.Popen([save_path], shell=True)
+                        
+                        # 关闭原始程序
+                        print("更新程序已启动，正在关闭当前应用...")
+                        QApplication.quit()
+                        sys.exit(0)
                     except Exception as e:
                         # 只记录错误，不显示提示
                         print(f"启动安装程序失败: {str(e)}")

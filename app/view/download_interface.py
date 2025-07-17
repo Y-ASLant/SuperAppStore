@@ -15,6 +15,7 @@ from qfluentwidgets import setFont, setTheme
 from ..common.config import cfg
 from ..common.setting import APPS_FILE, DOWNLOADED_APPS_FILE, get_download_path
 from ..utils.notification import Notification
+from ..utils.update import CustomMessageBox
 
 
 class DownloadSignals(QObject):
@@ -174,7 +175,7 @@ class DownloadTaskCard(CardWidget):
             return
             
         # 弹出确认对话框
-        box = MessageBox(
+        box = CustomMessageBox(
             self.tr('确认删除'),
             self.tr(f'确定要删除 {self.filename} 吗？'),
             self.window()
@@ -208,7 +209,7 @@ class DownloadTaskCard(CardWidget):
                 
         except Exception as e:
             # 删除失败
-            MessageBox(
+            CustomMessageBox(
                 self.tr('删除失败'),
                 self.tr(f'无法删除文件: {str(e)}'),
                 self.window()
