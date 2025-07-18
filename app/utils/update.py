@@ -7,7 +7,7 @@ import subprocess
 import sys
 from PyQt5.QtCore import QObject, QPoint, QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QKeyEvent
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QWidget
 from qfluentwidgets import (MessageBox, InfoBar, InfoBarManager, ProgressBar)
 from ..common.setting import VERSION, UPDATE_DATE, VERSION_URL
 from .notification import Notification
@@ -44,6 +44,8 @@ class DownloadThread(QThread):
             
             # 开始下载
             response = requests.get(self.url, stream=True)
+            response.raise_for_status()  # 如果请求失败，抛出异常
+            
             total_size = int(response.headers.get('content-length', 0))
             
             if total_size == 0:
@@ -68,8 +70,31 @@ class DownloadThread(QThread):
                         self.progress_signal.emit(progress)
             
             self.finished_signal.emit(True, "下载完成")
+        except requests.exceptions.SSLError as e:
+            error_msg = "网络安全连接错误，请检查网络设置或稍后重试"
+            print(f"SSL错误: {str(e)}")
+            self.finished_signal.emit(False, error_msg)
+            return  # 添加return确保不会继续执行
+        except requests.exceptions.ConnectionError as e:
+            error_msg = "无法连接到服务器，请检查网络连接"
+            print(f"连接错误: {str(e)}")
+            self.finished_signal.emit(False, error_msg)
+            return  # 添加return确保不会继续执行
+        except requests.exceptions.Timeout as e:
+            error_msg = "连接超时，请检查网络状态后重试"
+            print(f"超时错误: {str(e)}")
+            self.finished_signal.emit(False, error_msg)
+            return  # 添加return确保不会继续执行
+        except requests.exceptions.RequestException as e:
+            error_msg = "网络错误，请检查网络设置后重试"
+            print(f"请求错误: {str(e)}")
+            self.finished_signal.emit(False, error_msg)
+            return  # 添加return确保不会继续执行
         except Exception as e:
-            self.finished_signal.emit(False, f"下载失败: {str(e)}")
+            error_msg = "下载失败，请稍后重试"
+            print(f"下载错误: {str(e)}")
+            self.finished_signal.emit(False, error_msg)
+            return  # 添加return确保不会继续执行
     
     def cancel(self):
         """取消下载"""
@@ -100,22 +125,21 @@ class CustomInfoBarManager(InfoBarManager):
         return QPoint(pos.x(), pos.y() - 16)
 
 
-class UpdateChecker(QObject):
-    """检查应用更新的类"""
-
+class CheckUpdateThread(QThread):
+    """检查更新线程"""
     # 定义更新检查完成的信号
     updateCheckFinished = pyqtSignal(
         bool, str, str, str, bool
     )  # 是否有更新，版本号，更新日志，下载链接，是否强制更新
 
-    def __init__(self):
+    def __init__(self, version_url, current_version, current_date):
         super().__init__()
-        self.version_url = VERSION_URL
-        self.current_version = VERSION
-        self.current_date = UPDATE_DATE  # 获取当前版本更新日期
-
-    def check_update(self):
-        """检查更新"""
+        self.version_url = version_url
+        self.current_version = current_version
+        self.current_date = current_date
+        
+    def run(self):
+        """线程执行函数，检查更新"""
         try:
             # 发送请求获取最新版本信息
             response = requests.get(self.version_url, timeout=10)
@@ -146,14 +170,19 @@ class UpdateChecker(QObject):
                 has_update, remote_version, changelog_str, download_url, force_update
             )
 
-            return has_update, remote_version, changelog_str, download_url, force_update
-
-        except Exception as e:
+        except requests.exceptions.RequestException as e:
+            # 网络错误处理
+            error_msg = "网络连接错误，请检查网络设置后重试"
             print(f"检查更新失败: {e}")
             # 发送信号表示检查失败
-            self.updateCheckFinished.emit(False, "", f"检查更新失败: {e}", "", False)
-            return False, "", f"检查更新失败: {e}", "", False
-
+            self.updateCheckFinished.emit(False, "", error_msg, "", False)
+        except Exception as e:
+            # 其他错误处理
+            error_msg = "检查更新失败，请稍后重试"
+            print(f"检查更新失败: {e}")
+            # 发送信号表示检查失败
+            self.updateCheckFinished.emit(False, "", error_msg, "", False)
+    
     def _compare_version(self, remote_version):
         """比较版本号，如果远程版本号大于当前版本号，则返回True"""
         current_parts = [int(x) for x in self.current_version.split(".")]
@@ -190,6 +219,36 @@ class UpdateChecker(QObject):
             print(f"更新日期比较错误: {e}")
             return False
 
+class UpdateChecker(QObject):
+    """检查应用更新的类"""
+
+    # 定义更新检查完成的信号
+    updateCheckFinished = pyqtSignal(
+        bool, str, str, str, bool
+    )  # 是否有更新，版本号，更新日志，下载链接，是否强制更新
+
+    def __init__(self):
+        super().__init__()
+        self.version_url = VERSION_URL
+        self.current_version = VERSION
+        self.current_date = UPDATE_DATE  # 获取当前版本更新日期
+        self.check_thread = None
+
+    def check_update(self):
+        """检查更新"""
+        # 创建并启动检查更新线程
+        self.check_thread = CheckUpdateThread(
+            self.version_url, self.current_version, self.current_date
+        )
+        # 连接信号
+        self.check_thread.updateCheckFinished.connect(self._on_thread_finished)
+        # 启动线程
+        self.check_thread.start()
+    
+    def _on_thread_finished(self, has_update, remote_version, changelog_str, download_url, force_update):
+        """处理线程完成信号"""
+        # 转发信号
+        self.updateCheckFinished.emit(has_update, remote_version, changelog_str, download_url, force_update)
 
 class UpdateManager(QObject):
     """更新管理器，处理显示更新信息和下载更新"""
@@ -203,6 +262,7 @@ class UpdateManager(QObject):
         self.progress_bar = None
         self.is_downloading = False
         self.download_thread = None
+        self.force_update = False
 
     def check_for_updates(self):
         """检查更新"""
@@ -219,12 +279,14 @@ class UpdateManager(QObject):
             # 获取远程日期信息
             remote_date_info = ""
             try:
-                data = requests.get(self.checker.version_url, timeout=10).json()
-                remote_date = data.get("update_date", "")
-                if remote_date:
-                    remote_date_info = f"（更新日期: {remote_date}）"
+                # 直接使用已获取的信息而不是再次请求网络
+                if version:
+                    remote_date_info = f"（版本: {version}）"
             except Exception as e:
                 print(f"获取更新日期失败: {e}")
+                
+            # 保存是否强制更新的状态
+            self.force_update = force_update
                 
             if force_update:
                 title = "发现新版本（强制更新）"
@@ -257,7 +319,7 @@ class UpdateManager(QObject):
                 self._start_download()
         else:
             # 没有更新或检查失败
-            if changelog and changelog.startswith("检查更新失败"):
+            if changelog and (changelog.startswith("网络") or changelog.startswith("检查更新失败")):
                 # 显示错误信息
                 Notification.error(
                     title="检查更新失败",
@@ -322,11 +384,21 @@ class UpdateManager(QObject):
         
         # 修改对话框按钮
         self.update_dialog.yesButton.hide()  # 隐藏确认按钮
-        if self.update_dialog.cancelButton.isHidden():
+        
+        # 如果是强制更新，完全隐藏按钮区域
+        if self.force_update:
+            # 查找并完全隐藏按钮组区域
+            for child in self.update_dialog.findChildren(QWidget):
+                if hasattr(child, 'objectName') and child.objectName() == "buttonGroup":
+                    child.setFixedHeight(0)
+                    child.setStyleSheet("background-color: transparent; border: none; margin: 0; padding: 0;")
+                    break
+        # 只有在非强制更新时才显示取消按钮
+        else:
             self.update_dialog.cancelButton.show()  # 显示取消按钮
-        self.update_dialog.cancelButton.setText("取消")
-        self.update_dialog.cancelButton.clicked.disconnect()  # 断开原有连接
-        self.update_dialog.cancelButton.clicked.connect(self._cancel_download)
+            self.update_dialog.cancelButton.setText("取消")
+            self.update_dialog.cancelButton.clicked.disconnect()  # 断开原有连接
+            self.update_dialog.cancelButton.clicked.connect(self._cancel_download)
         
         # 添加进度条到容器
         self.progress_bar = ProgressBar(self.progress_container)
@@ -370,13 +442,15 @@ class UpdateManager(QObject):
             
             # 下载完成处理
             def on_download_finished(success, message):
+                # 确保只处理一次
+                self.download_thread.finished_signal.disconnect(on_download_finished)
+                
                 if success:
                     # 关闭对话框
                     self.update_dialog.accept()
                     
                     # 直接启动安装程序
                     try:
-                        # 直接运行exe安装文件并启动安装程序
                         subprocess.Popen([save_path], shell=True)
                         
                         # 关闭原始程序
@@ -384,11 +458,25 @@ class UpdateManager(QObject):
                         QApplication.quit()
                         sys.exit(0)
                     except Exception as e:
-                        # 只记录错误，不显示提示
+                        # 显示错误提示
+                        error_msg = "启动安装程序失败，请手动运行安装文件"
                         print(f"启动安装程序失败: {str(e)}")
+                        Notification.error(
+                            title="更新失败",
+                            content=error_msg,
+                            duration=3000,
+                            parent=self.parent()
+                        )
+                        self.update_dialog.reject()
                 else:
-                    # 下载失败，但不显示提示
+                    # 下载失败，显示提示
                     print(f"下载失败: {message}")
+                    Notification.error(
+                        title="下载失败",
+                        content=message,
+                        duration=3000,
+                        parent=self.parent()
+                    )
                     self.update_dialog.reject()
                 
                 # 重置下载状态
@@ -400,8 +488,15 @@ class UpdateManager(QObject):
             self.download_thread.start()
             
         except Exception as e:
-            # 只记录错误，不显示提示
+            # 显示错误提示
+            error_msg = "启动下载失败，请稍后重试"
             print(f"启动下载时发生错误: {str(e)}")
+            Notification.error(
+                title="下载失败",
+                content=error_msg,
+                duration=3000,
+                parent=self.parent()
+            )
             if self.update_dialog:
                 self.update_dialog.reject()
             self.is_downloading = False

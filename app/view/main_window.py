@@ -80,8 +80,6 @@ class MainWindow(MSFluentWindow):
         signalBus.downloadApp.connect(self.onDownloadApp)
         # 连接下载完成信号到同步记录函数
         self.downloadInterface.signals.moveToCompletedSignal.connect(self.onDownloadComplete)
-        # 连接下载失败信号
-        self.downloadInterface.signals.moveToFailedSignal.connect(self.onDownloadFailed)
         
     def syncDownloadRecords(self):
         """同步应用界面和下载界面的下载记录"""

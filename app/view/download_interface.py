@@ -506,13 +506,15 @@ class DownloadInterface(ScrollArea):
             self.signals.moveToCompletedSignal.emit(app_id)
             
         except requests.RequestException as e:
+            # 将所有请求错误统一处理为"网络错误"
             print(f"下载请求出错: {str(e)}")
-            # 发送失败信号
-            self.signals.moveToFailedSignal.emit(app_id, str(e))
+            # 发送统一的失败信号
+            self.signals.moveToFailedSignal.emit(app_id, "网络错误")
         except Exception as e:
+            # 将所有其他错误统一处理为"下载失败"
             print(f"下载过程出错: {str(e)}")
-            # 发送失败信号
-            self.signals.moveToFailedSignal.emit(app_id, str(e))
+            # 发送统一的失败信号
+            self.signals.moveToFailedSignal.emit(app_id, "网络错误")
 
     @pyqtSlot(str, int)
     def _onUpdateProgress(self, app_id, progress):
@@ -715,19 +717,20 @@ class DownloadInterface(ScrollArea):
             self.failedTasks, 
             self.failedPageLayout,
             self.failedInfoLabel,
-            f"{self.tr('下载失败')}: {error_msg}"
+            f"{self.tr('下载失败')}: {self.tr('网络错误')}"
         )
         
         if task_card:
-            # 显示通知
+            # 只显示友好通知
             app_name = task_card.app_data['name']
             self._showNotification(
-                '下载失败', 
-                f"{app_name} {self.tr('下载失败')}: {error_msg}", 
+                '添加失败', 
+                f"{app_name} {self.tr('网络错误')}", 
                 'error',
                 3000
             )
-            
+            # 控制台输出详细错误
+            print(f"下载失败: {error_msg}")
             # 更新界面
             self.failedPage.update()
             self.update()
