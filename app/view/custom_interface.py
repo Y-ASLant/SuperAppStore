@@ -3,8 +3,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
 from PyQt5.QtGui import QFont
 
-from qfluentwidgets import (ScrollArea, SubtitleLabel, BodyLabel, setFont, setTheme, 
-                            PrimaryPushButton, LineEdit)
+from qfluentwidgets import (ScrollArea, SubtitleLabel, BodyLabel, setFont, PrimaryPushButton, LineEdit)
 
 from ..common.style_sheet import StyleSheet
 from ..common.config import cfg
@@ -106,14 +105,7 @@ class CustomInterface(ScrollArea):
         
     def __connectSignalToSlot(self):
         """连接信号和槽"""
-        # 连接主题变更信号
-        cfg.themeChanged.connect(self.__onThemeChanged)
-        
-    def __onThemeChanged(self, theme):
-        """处理主题变更"""
-        setTheme(theme)
-        # 重新应用样式表
-        StyleSheet.SETTING_INTERFACE.apply(self)
+        pass
         
     def __onBrowseButtonClicked(self):
         """浏览按钮点击事件"""

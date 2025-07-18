@@ -2,7 +2,7 @@
 from qfluentwidgets import (
     ScrollArea, SegmentedWidget, CardWidget, SearchLineEdit, ComboBox, InfoBarPosition,
     TransparentToolButton, BodyLabel, CaptionLabel, StrongBodyLabel, SubtitleLabel, ToolButton,
-    FluentIcon as FIF, setTheme
+    FluentIcon as FIF
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget
@@ -10,7 +10,6 @@ import json
 import os
 
 from ..common.style_sheet import StyleSheet
-from ..common.config import cfg
 from ..common.setting import APPS_FILE, DOWNLOADED_APPS_FILE
 from ..common.signal_bus import signalBus
 from ..utils.notification import Notification
@@ -182,10 +181,7 @@ class ApplicationInterface(ScrollArea):
         self.__loadApps()
         
         # 连接信号
-        self.segmentedWidget.currentItemChanged.connect(
-            lambda k: self.stackedWidget.setCurrentWidget(self.findChild(QWidget, k))
-        )
-        cfg.themeChanged.connect(self.__onThemeChanged)
+        self.__connectSignalToSlot()
 
     def addSubInterface(self, widget, objectName, text, icon=None):
         """添加子界面"""
@@ -444,7 +440,9 @@ class ApplicationInterface(ScrollArea):
             self.__loadApps()
             self.__showSuccessNotification(self.tr("应用列表已刷新"))
 
-    def __onThemeChanged(self, theme):
-        """处理主题变更"""
-        setTheme(theme)
-        StyleSheet.SETTING_INTERFACE.apply(self) 
+    def __connectSignalToSlot(self):
+        """连接信号和槽"""
+        # 连接分段导航栏的信号
+        self.segmentedWidget.currentItemChanged.connect(
+            lambda k: self.stackedWidget.setCurrentWidget(self.findChild(QWidget, k))
+        ) 

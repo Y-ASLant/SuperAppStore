@@ -1,6 +1,6 @@
 # coding:utf-8
 from qfluentwidgets import (SwitchSettingCard, HyperlinkCard, PrimaryPushSettingCard, ScrollArea,
-                            ComboBoxSettingCard, ExpandLayout, setTheme, setFont)
+                            ComboBoxSettingCard, ExpandLayout, setFont)
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import SettingCardGroup as CardGroup
 from PyQt5.QtCore import Qt, QUrl
@@ -171,7 +171,8 @@ class SettingInterface(ScrollArea):
         cfg.appRestartSig.connect(self._showRestartTooltip)
 
         # personalization
-        cfg.themeChanged.connect(setTheme)
+        # 直接在设置界面通过themeCard控制主题，无需单独连接全局themeChanged信号
+        # 移除: cfg.themeChanged.connect(setTheme)
         self.micaCard.checkedChanged.connect(signalBus.micaEnableChanged)
 
         # check update

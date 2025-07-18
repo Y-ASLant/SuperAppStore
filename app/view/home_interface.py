@@ -5,7 +5,7 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout
 
 from ..common.style_sheet import StyleSheet
-from qfluentwidgets import setFont, setTheme
+from qfluentwidgets import setFont
 from ..common.config import cfg
 
 
@@ -44,9 +44,6 @@ class HomeInterface(ScrollArea):
 
         # 初始化布局
         self.__initLayout()
-        
-        # 连接主题变更信号
-        cfg.themeChanged.connect(self.__onThemeChanged)
 
     def __initLayout(self):
         self.vBoxLayout.setContentsMargins(36, 0, 36, 0)
@@ -54,10 +51,4 @@ class HomeInterface(ScrollArea):
         self.vBoxLayout.addWidget(self.homeLabel, 0, Qt.AlignLeft)
         self.vBoxLayout.addSpacing(10)
         self.vBoxLayout.addWidget(self.welcomeLabel)
-        self.vBoxLayout.addStretch(1)
-        
-    def __onThemeChanged(self, theme):
-        """处理主题变更"""
-        setTheme(theme)
-        # 重新应用样式表
-        StyleSheet.SETTING_INTERFACE.apply(self) 
+        self.vBoxLayout.addStretch(1) 

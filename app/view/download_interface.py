@@ -4,15 +4,14 @@ from PyQt5.QtCore import Qt, QUrl, pyqtSlot, pyqtSignal, QObject
 from PyQt5.QtGui import QFont, QDesktopServices
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QStackedWidget, QHBoxLayout, QSizePolicy
 from qfluentwidgets import FluentIcon as FIF
-from qfluentwidgets import TransparentToolButton, MessageBox
+from qfluentwidgets import TransparentToolButton
 import os
 import requests
 import threading
 import json
 
 from ..common.style_sheet import StyleSheet
-from qfluentwidgets import setFont, setTheme
-from ..common.config import cfg
+from qfluentwidgets import setFont
 from ..common.setting import APPS_FILE, DOWNLOADED_APPS_FILE, get_download_path
 from ..utils.notification import Notification
 from ..utils.update import CustomMessageBox
@@ -339,9 +338,6 @@ class DownloadInterface(ScrollArea):
             lambda k: self.stackedWidget.setCurrentWidget(self.findChild(QWidget, k))
         )
         
-        # 连接主题变更信号
-        cfg.themeChanged.connect(self._onThemeChanged)
-        
     def _initLayout(self):
         self.vBoxLayout.setContentsMargins(36, 0, 36, 0)
         self.vBoxLayout.addSpacing(36)
@@ -370,13 +366,6 @@ class DownloadInterface(ScrollArea):
         self.failedPageLayout.addStretch(1)
         self.failedPageLayout.addWidget(self.failedInfoLabel, 0, Qt.AlignHCenter)
         self.failedPageLayout.addStretch(1)
-        
-    def _onThemeChanged(self, theme):
-        """处理主题变更"""
-        # 应用主题
-        setTheme(theme)
-        # 重新应用样式表，确保样式更新
-        StyleSheet.SETTING_INTERFACE.apply(self)
         
     def addDownloadTask(self, app_data):
         """添加下载任务"""

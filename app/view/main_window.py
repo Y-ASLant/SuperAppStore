@@ -1,13 +1,14 @@
 # coding:utf-8
 import os
 import requests
+import time
 
-from PyQt5.QtCore import QSize
+from PyQt5.QtCore import QSize, QTimer
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWidgets import QApplication
 
 from qfluentwidgets import (NavigationItemPosition, MSFluentWindow,
-                           SplashScreen, FluentIcon as FIF, InfoBarPosition)
+                           SplashScreen, FluentIcon as FIF, InfoBarPosition, setTheme)
 from .home_interface import HomeInterface
 from .setting_interface import SettingInterface
 from .application_interface import ApplicationInterface
@@ -15,9 +16,9 @@ from .download_interface import DownloadInterface
 from .custom_interface import CustomInterface
 from ..common.config import cfg
 from ..common.icon import Icon
-from ..common import resource
 from ..common.signal_bus import signalBus
 from ..common.setting import APPS_LIST_URL, CONFIG_FOLDER, APPS_FILE
+from ..common.style_sheet import StyleSheet
 from ..utils.update import UpdateManager
 from ..utils.notification import Notification
 
@@ -30,7 +31,11 @@ class MainWindow(MSFluentWindow):
         # 获取应用列表
         self.fetchAppsList()
 
-        # TODO: create sub interface
+        # 主题切换防抖控制
+        self.last_theme_update = 0
+        self.theme_debounce_time = 300  # 毫秒
+
+        # 初始化子界面
         self.homeInterface = HomeInterface(self)
         self.applicationInterface = ApplicationInterface(self)
         self.downloadInterface = DownloadInterface(self)
@@ -42,7 +47,7 @@ class MainWindow(MSFluentWindow):
         
         self.connectSignalToSlot()
 
-        # add items to navigation interface
+        # 添加导航项目
         self.initNavigation()
         
         # 同步两个界面的下载记录
@@ -74,13 +79,54 @@ class MainWindow(MSFluentWindow):
 
     def connectSignalToSlot(self):
         signalBus.micaEnableChanged.connect(self.setMicaEffectEnabled)
-        # 连接检查更新信号
         signalBus.checkUpdateSig.connect(self.checkUpdate)
-        # 连接下载应用信号
         signalBus.downloadApp.connect(self.onDownloadApp)
-        # 连接下载完成信号到同步记录函数
         self.downloadInterface.signals.moveToCompletedSignal.connect(self.onDownloadComplete)
         
+        # 统一处理主题变更，只更新当前可见的界面
+        cfg.themeChanged.connect(self.onThemeChanged)
+    
+    def onThemeChanged(self, theme):
+        """统一处理主题变更，只更新当前可见的界面"""
+        # 首先应用全局主题
+        setTheme(theme)
+        
+        # 防抖处理：避免短时间内重复应用主题
+        current_time = int(time.time() * 1000)
+        if current_time - self.last_theme_update < self.theme_debounce_time:
+            return
+            
+        self.last_theme_update = current_time
+        
+        # 使用定时器延迟更新样式，避免卡顿
+        QTimer.singleShot(50, lambda: self._updateCurrentInterfaceStyle())
+        
+    def _updateCurrentInterfaceStyle(self):
+        """更新当前可见界面的样式，减少不必要的计算"""
+        try:
+            # 获取当前活动的界面
+            current_route_key = self.navigationInterface.currentRouteKey()
+            
+            # 获取当前显示的界面
+            if current_route_key == self.homeInterface.objectName():
+                current_widget = self.homeInterface
+            elif current_route_key == self.applicationInterface.objectName():
+                current_widget = self.applicationInterface
+            elif current_route_key == self.downloadInterface.objectName():
+                current_widget = self.downloadInterface
+            elif current_route_key == self.settingInterface.objectName():
+                current_widget = self.settingInterface
+            elif current_route_key == self.customInterface.objectName():
+                current_widget = self.customInterface
+            else:
+                return
+                
+            # 应用样式到当前界面
+            StyleSheet.SETTING_INTERFACE.apply(current_widget)
+        except:
+            # 出错时不做任何处理
+            pass
+
     def syncDownloadRecords(self):
         """同步应用界面和下载界面的下载记录"""
         # 合并两个界面的下载记录
@@ -153,7 +199,14 @@ class MainWindow(MSFluentWindow):
             print(f"获取应用列表出错: {str(e)}")
 
     def initNavigation(self):
-        # TODO: add navigation items
+        # 设置所有接口的 objectName
+        self.homeInterface.setObjectName("homeInterface")
+        self.applicationInterface.setObjectName("applicationInterface") 
+        self.downloadInterface.setObjectName("downloadInterface")
+        self.settingInterface.setObjectName("settingInterface")
+        self.customInterface.setObjectName("customInterface")
+        
+        # 添加导航项
         self.addSubInterface(
             self.homeInterface, FIF.HOME, self.tr("首页"), FIF.HOME_FILL
         )
@@ -161,9 +214,8 @@ class MainWindow(MSFluentWindow):
             self.applicationInterface, FIF.APPLICATION, self.tr("应用")
         )
         self.addSubInterface(self.downloadInterface, FIF.DOWNLOAD, self.tr("下载"))
-        self.downloadInterface.setObjectName('downloadInterface')
 
-        # 添加 BotSparkle_Filled 图标，无任何功能
+        # 添加底部导航项
         self.addSubInterface(
             self.customInterface,
             Icon.BOT_SPARKLE,
@@ -171,7 +223,6 @@ class MainWindow(MSFluentWindow):
             Icon.BOT_SPARKLE_FILLED,
             NavigationItemPosition.BOTTOM,
         )
-        # add custom widget to bottom
         self.addSubInterface(
             self.settingInterface,
             Icon.SETTINGS,
@@ -198,11 +249,7 @@ class MainWindow(MSFluentWindow):
 
         desktop = QApplication.primaryScreen().availableGeometry()
         w, h = desktop.width(), desktop.height()
-        self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
-        self.show()
-        QApplication.processEvents()
+        self.move((w - self.width()) // 2, (h - self.height()) // 2)
 
     def resizeEvent(self, e):
         super().resizeEvent(e)
-        if hasattr(self, "splashScreen"):
-            self.splashScreen.resize(self.size())
