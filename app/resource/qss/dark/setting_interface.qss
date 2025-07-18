@@ -18,3 +18,19 @@ QLabel#contentLabel {
     color: white;
 }
 
+/* 下载任务卡片样式 */
+DownloadTaskCard {
+    background-color: rgba(39, 39, 39, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+}
+
+DownloadTaskCard QLabel {
+    color: white;
+}
+
+/* 下载界面的特定样式 */
+#downloadingPage, #completedPage, #failedPage {
+    background-color: transparent;
+}
+

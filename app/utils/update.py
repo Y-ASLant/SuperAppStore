@@ -74,27 +74,22 @@ class DownloadThread(QThread):
             error_msg = "网络安全连接错误，请检查网络设置或稍后重试"
             print(f"SSL错误: {str(e)}")
             self.finished_signal.emit(False, error_msg)
-            return  # 添加return确保不会继续执行
         except requests.exceptions.ConnectionError as e:
             error_msg = "无法连接到服务器，请检查网络连接"
             print(f"连接错误: {str(e)}")
             self.finished_signal.emit(False, error_msg)
-            return  # 添加return确保不会继续执行
         except requests.exceptions.Timeout as e:
             error_msg = "连接超时，请检查网络状态后重试"
             print(f"超时错误: {str(e)}")
             self.finished_signal.emit(False, error_msg)
-            return  # 添加return确保不会继续执行
         except requests.exceptions.RequestException as e:
             error_msg = "网络错误，请检查网络设置后重试"
             print(f"请求错误: {str(e)}")
             self.finished_signal.emit(False, error_msg)
-            return  # 添加return确保不会继续执行
         except Exception as e:
             error_msg = "下载失败，请稍后重试"
             print(f"下载错误: {str(e)}")
             self.finished_signal.emit(False, error_msg)
-            return  # 添加return确保不会继续执行
     
     def cancel(self):
         """取消下载"""
@@ -278,12 +273,8 @@ class UpdateManager(QObject):
             
             # 获取远程日期信息
             remote_date_info = ""
-            try:
-                # 直接使用已获取的信息而不是再次请求网络
-                if version:
-                    remote_date_info = f"（版本: {version}）"
-            except Exception as e:
-                print(f"获取更新日期失败: {e}")
+            if version:
+                remote_date_info = f"（版本: {version}）"
                 
             # 保存是否强制更新的状态
             self.force_update = force_update
@@ -313,14 +304,10 @@ class UpdateManager(QObject):
             
             # 显示对话框
             self.update_dialog.exec()
-            
-            if force_update and self.update_dialog.result() == 0:
-                # 如果是强制更新但用户关闭了对话框，仍然开始下载
-                self._start_download()
         else:
             # 没有更新或检查失败
             if changelog and (changelog.startswith("网络") or changelog.startswith("检查更新失败")):
-                # 显示错误信息
+                # 只在检查失败时显示错误信息
                 Notification.error(
                     title="检查更新失败",
                     content=changelog,

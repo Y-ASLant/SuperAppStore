@@ -6,7 +6,6 @@ from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout
 
 from ..common.style_sheet import StyleSheet
 from qfluentwidgets import setFont
-from ..common.config import cfg
 
 
 class HomeInterface(ScrollArea):

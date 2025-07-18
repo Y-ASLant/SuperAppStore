@@ -103,29 +103,14 @@ class MainWindow(MSFluentWindow):
         
     def _updateCurrentInterfaceStyle(self):
         """更新当前可见界面的样式，减少不必要的计算"""
-        try:
-            # 获取当前活动的界面
-            current_route_key = self.navigationInterface.currentRouteKey()
+        # 获取当前活动界面的索引和部件
+        current_index = self.stackedWidget.currentIndex()
+        current_widget = self.stackedWidget.widget(current_index)
+        if not current_widget:
+            return
             
-            # 获取当前显示的界面
-            if current_route_key == self.homeInterface.objectName():
-                current_widget = self.homeInterface
-            elif current_route_key == self.applicationInterface.objectName():
-                current_widget = self.applicationInterface
-            elif current_route_key == self.downloadInterface.objectName():
-                current_widget = self.downloadInterface
-            elif current_route_key == self.settingInterface.objectName():
-                current_widget = self.settingInterface
-            elif current_route_key == self.customInterface.objectName():
-                current_widget = self.customInterface
-            else:
-                return
-                
-            # 应用样式到当前界面
-            StyleSheet.SETTING_INTERFACE.apply(current_widget)
-        except:
-            # 出错时不做任何处理
-            pass
+        # 应用样式到当前界面
+        StyleSheet.SETTING_INTERFACE.apply(current_widget)
 
     def syncDownloadRecords(self):
         """同步应用界面和下载界面的下载记录"""
