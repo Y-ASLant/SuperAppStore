@@ -93,14 +93,14 @@ class SettingInterface(ScrollArea):
             FIF.HELP,
             self.tr('Help'),
             self.tr(
-                'Discover new features and learn useful tips about Fluent Client'),
+                'Discover new features and learn useful tips about Super App Store'),
             self.aboutGroup
         )
         self.feedbackCard = PrimaryPushSettingCard(
             self.tr('Provide feedback'),
             FIF.FEEDBACK,
             self.tr('Provide feedback'),
-            self.tr('Help us improve Fluent Client by providing feedback'),
+            self.tr('Help us improve Super App Store by providing feedback'),
             self.aboutGroup
         )
         self.aboutCard = PrimaryPushSettingCard(

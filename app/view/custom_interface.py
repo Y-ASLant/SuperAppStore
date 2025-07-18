@@ -26,9 +26,6 @@ class CustomInterface(ScrollArea):
         self.scrollWidget.setObjectName("scrollWidget")
 
         # 创建界面元素
-        self.titleLabel = SubtitleLabel(self.tr("自定义设置"), self)
-        self.titleLabel.setObjectName("customInterfaceTitle")
-        
         # 添加说明文字
         self.descriptionLabel = BodyLabel(
             self.tr("在这里可以自定义软件的各项设置"), 
@@ -75,7 +72,6 @@ class CustomInterface(ScrollArea):
         self.setWidgetResizable(True)
         
         # 设置字体
-        setFont(self.titleLabel, 23, QFont.Weight.DemiBold)
         setFont(self.descriptionLabel, 16, QFont.Weight.Normal)
         setFont(self.downloadPathLabel, 18, QFont.Weight.DemiBold)
         setFont(self.downloadPathDescriptionLabel, 14, QFont.Weight.Normal)
@@ -89,8 +85,6 @@ class CustomInterface(ScrollArea):
     def __initLayout(self):
         """初始化布局"""
         # 添加到主布局
-        self.vBoxLayout.addWidget(self.titleLabel)
-        self.vBoxLayout.addSpacing(10)
         self.vBoxLayout.addWidget(self.descriptionLabel)
         self.vBoxLayout.addSpacing(30)
         

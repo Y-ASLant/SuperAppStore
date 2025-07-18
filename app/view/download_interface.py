@@ -71,12 +71,8 @@ class DownloadTaskCard(CardWidget):
         self.buttonsLayout = QHBoxLayout()
         
         # 创建操作按钮
-        self.buttons = {
-            'open_file': self._createButton(FIF.DOCUMENT, self.tr("打开文件"), self._handleFile),
-            'open_folder': self._createButton(FIF.FOLDER, self.tr("打开文件夹"), self._handleFolder),
-            'delete_file': self._createButton(FIF.DELETE, self.tr("删除本地文件"), self._confirmDeleteFile),
-            'redownload': self._createButton(FIF.SCROLL, self.tr("重新下载"), self._handleRedownload)
-        }
+        self.buttons = {}
+        self._createButtons()
         
         # 将按钮布局添加到状态布局
         self.statusLayout.addLayout(self.buttonsLayout)
@@ -92,6 +88,18 @@ class DownloadTaskCard(CardWidget):
         
         # 设置大小策略，使卡片水平方向可以拉伸
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+    def _createButtons(self):
+        """创建所有操作按钮"""
+        button_configs = {
+            'open_file': (FIF.DOCUMENT, self.tr("打开文件"), self._handleFile),
+            'open_folder': (FIF.FOLDER, self.tr("打开文件夹"), self._handleFolder),
+            'delete_file': (FIF.DELETE, self.tr("删除本地文件"), self._confirmDeleteFile),
+            'redownload': (FIF.SCROLL, self.tr("重新下载"), self._handleRedownload)
+        }
+        
+        for key, (icon, tooltip, callback) in button_configs.items():
+            self.buttons[key] = self._createButton(icon, tooltip, callback)
 
     def _createButton(self, icon, tooltip, callback):
         """创建操作按钮"""
@@ -249,55 +257,55 @@ class DownloadInterface(ScrollArea):
         # 创建堆叠小部件用于切换内容
         self.stackedWidget = QStackedWidget(self)
 
-        # 下载中页面
-        self.downloadingPage = QWidget(self)
-        self.downloadingPageLayout = QVBoxLayout(self.downloadingPage)
-        self.downloadingInfoLabel = QLabel(
-            self.tr("暂无正在下载的应用"), self.downloadingPage
-        )
-        self.downloadingInfoLabel.setObjectName("contentLabel")  # 确保设置对象名
-        self.downloadingPageLayout.addWidget(self.downloadingInfoLabel)
-        self.downloadingPage.setObjectName("downloadingPage")
+        # 创建页面
+        self.downloadingPage = self._createPage("downloadingPage", self.tr("暂无正在下载的应用"))
+        self.completedPage = self._createPage("completedPage", self.tr("暂无下载已完成的应用"))
+        self.failedPage = self._createPage("failedPage", self.tr("暂无下载失败的应用"))
+        
+        # 存储页面引用
+        self.pages = {
+            "downloadingPage": {"widget": self.downloadingPage, "layout": self.downloadingPage.layout(), 
+                               "infoLabel": self.downloadingPage.findChild(QLabel, "contentLabel")},
+            "completedPage": {"widget": self.completedPage, "layout": self.completedPage.layout(),
+                             "infoLabel": self.completedPage.findChild(QLabel, "contentLabel")},
+            "failedPage": {"widget": self.failedPage, "layout": self.failedPage.layout(),
+                          "infoLabel": self.failedPage.findChild(QLabel, "contentLabel")}
+        }
         
         # 存储下载任务
         self.downloadingTasks = {}
         self.completedTasks = {}
         self.failedTasks = {}
 
-        # 已完成页面
-        self.completedPage = QWidget(self)
-        self.completedPageLayout = QVBoxLayout(self.completedPage)
-        self.completedInfoLabel = QLabel(
-            self.tr("暂无下载已完成的应用"), self.completedPage
-        )
-        self.completedInfoLabel.setObjectName("contentLabel")  # 确保设置对象名
-        self.completedPageLayout.addWidget(self.completedInfoLabel)
-        self.completedPage.setObjectName("completedPage")
-
-        # 失败页面
-        self.failedPage = QWidget(self)
-        self.failedPageLayout = QVBoxLayout(self.failedPage)
-        self.failedInfoLabel = QLabel(self.tr("暂无下载失败的应用"), self.failedPage)
-        self.failedInfoLabel.setObjectName("contentLabel")  # 确保设置对象名
-        self.failedPageLayout.addWidget(self.failedInfoLabel)
-        self.failedPage.setObjectName("failedPage")
-
         # 添加子界面（带图标）
-        self.addSubInterface(
-            self.downloadingPage, "downloadingPage", self.tr("正在下载"), FIF.DOWNLOAD
-        )
-        self.addSubInterface(
-            self.completedPage, "completedPage", self.tr("下载完成"), FIF.COMPLETED
-        )
-        self.addSubInterface(
-            self.failedPage, "failedPage", self.tr("下载失败"), FIF.INFO
-        )
+        self.addSubInterface(self.downloadingPage, "downloadingPage", self.tr("正在下载"), FIF.DOWNLOAD)
+        self.addSubInterface(self.completedPage, "completedPage", self.tr("下载完成"), FIF.COMPLETED)
+        self.addSubInterface(self.failedPage, "failedPage", self.tr("下载失败"), FIF.INFO)
 
         self._initWidget()
         self._connectSignalToSlot()
         
         # 加载已完成的下载
         self._loadCompletedDownloads()
+    
+    def _createPage(self, objectName, infoLabelText):
+        """创建带有统一布局的页面"""
+        page = QWidget(self)
+        page.setObjectName(objectName)
+        layout = QVBoxLayout(page)
+        
+        # 创建信息标签
+        infoLabel = QLabel(infoLabelText, page)
+        infoLabel.setObjectName("contentLabel")
+        setFont(infoLabel, 16, QFont.Weight.Normal)
+        
+        # 设置布局
+        layout.setContentsMargins(0, 20, 0, 20)
+        layout.addStretch(1)
+        layout.addWidget(infoLabel, 0, Qt.AlignHCenter)
+        layout.addStretch(1)
+        
+        return page
 
     def addSubInterface(self, widget, objectName, text, icon=None):
         """添加子界面"""
@@ -313,11 +321,6 @@ class DownloadInterface(ScrollArea):
         self.setObjectName("downloadInterface")
 
         # 初始化样式表
-        setFont(self.titleLabel, 24, QFont.Weight.Medium)
-        setFont(self.downloadingInfoLabel, 16, QFont.Weight.Normal)
-        setFont(self.completedInfoLabel, 16, QFont.Weight.Normal)
-        setFont(self.failedInfoLabel, 16, QFont.Weight.Normal)
-        
         self.scrollWidget.setObjectName("scrollWidget")
         self.titleLabel.setObjectName("settingLabel")  # 使用与settingLabel相同的对象名
         
@@ -327,16 +330,22 @@ class DownloadInterface(ScrollArea):
         StyleSheet.SETTING_INTERFACE.apply(self)
         
         # 设置默认显示的页面
-        self.stackedWidget.setCurrentWidget(self.downloadingPage)
-        self.segmentedWidget.setCurrentItem("downloadingPage")
+        self._switchToPage("downloadingPage")
 
         # 初始化布局
         self._initLayout()
 
     def _connectSignalToSlot(self):
         self.segmentedWidget.currentItemChanged.connect(
-            lambda k: self.stackedWidget.setCurrentWidget(self.findChild(QWidget, k))
+            lambda k: self._switchToPage(k)
         )
+        
+    def _switchToPage(self, pageKey):
+        """切换到指定页面"""
+        page = self.pages.get(pageKey)
+        if page:
+            self.stackedWidget.setCurrentWidget(page["widget"])
+            self.segmentedWidget.setCurrentItem(pageKey)
         
     def _initLayout(self):
         self.vBoxLayout.setContentsMargins(36, 0, 36, 0)
@@ -346,26 +355,6 @@ class DownloadInterface(ScrollArea):
         self.vBoxLayout.addWidget(self.segmentedWidget, 0, Qt.AlignLeft)
         self.vBoxLayout.addWidget(self.stackedWidget, 1, Qt.AlignHCenter)
         self.vBoxLayout.addStretch(1)
-
-        # 设置下载页面布局，确保卡片能占满宽度
-        self.downloadingPageLayout.setContentsMargins(0, 20, 0, 20)
-        self.downloadingPageLayout.addStretch(1)
-        self.downloadingPageLayout.addWidget(
-            self.downloadingInfoLabel, 0, Qt.AlignHCenter
-        )
-        self.downloadingPageLayout.addStretch(1)
-
-        # 设置已完成页面布局
-        self.completedPageLayout.setContentsMargins(0, 20, 0, 20)
-        self.completedPageLayout.addStretch(1)
-        self.completedPageLayout.addWidget(self.completedInfoLabel, 0, Qt.AlignHCenter)
-        self.completedPageLayout.addStretch(1)
-
-        # 设置失败页面布局
-        self.failedPageLayout.setContentsMargins(0, 20, 0, 20)
-        self.failedPageLayout.addStretch(1)
-        self.failedPageLayout.addWidget(self.failedInfoLabel, 0, Qt.AlignHCenter)
-        self.failedPageLayout.addStretch(1)
         
     def addDownloadTask(self, app_data):
         """添加下载任务"""
@@ -377,7 +366,7 @@ class DownloadInterface(ScrollArea):
             return False
             
         # 直接隐藏"暂无下载"提示
-        self.downloadingInfoLabel.hide()
+        self.pages["downloadingPage"]["infoLabel"].hide()
             
         # 创建下载任务卡片
         task_card = DownloadTaskCard(app_data)
@@ -388,34 +377,32 @@ class DownloadInterface(ScrollArea):
         self.downloadingTasks[app_id] = task_card
         
         # 添加到下载中界面，并确保占满宽度
-        self.downloadingPageLayout.insertWidget(0, task_card, 0, Qt.AlignTop | Qt.AlignHCenter)
+        self.pages["downloadingPage"]["layout"].insertWidget(0, task_card, 0, Qt.AlignTop | Qt.AlignHCenter)
         task_card.setMinimumWidth(self.width() - 80)
         
         # 开始实际下载
         self._startDownloadThread(app_data, app_id, task_card)
         
         # 切换到下载界面
-        self.stackedWidget.setCurrentWidget(self.downloadingPage)
-        self.segmentedWidget.setCurrentItem("downloadingPage")
-        
-        # 更新界面
-        self.downloadingPage.update()
-        self.update()
+        self._switchToPage("downloadingPage")
         
         return True
         
-    def _startDownloadThread(self, app_data, app_id, task_card):
-        """启动下载线程的通用方法"""
-        # 获取文件名，格式为name_version
-        version = app_data.get('version', '')
+    def _getAppFilename(self, app_data):
+        """生成应用文件名"""
         name = app_data['name']
+        version = app_data.get('version', '')
         format = app_data.get('format', 'exe')  # 从JSON中获取格式，默认为exe
         
         # 构建文件名为name_version.format格式
         if version:
-            filename = f"{name}_{version}.{format}"
-        else:
-            filename = f"{name}.{format}"
+            return f"{name}_{version}.{format}"
+        return f"{name}.{format}"
+        
+    def _startDownloadThread(self, app_data, app_id, task_card):
+        """启动下载线程的通用方法"""
+        # 获取文件名
+        filename = self._getAppFilename(app_data)
         
         # 设置文件名
         task_card.setFilename(filename)
@@ -494,15 +481,10 @@ class DownloadInterface(ScrollArea):
             # 下载完成后，发送完成信号
             self.signals.moveToCompletedSignal.emit(app_id)
             
-        except requests.RequestException as e:
-            # 将所有请求错误统一处理为"网络错误"
-            print(f"下载请求出错: {str(e)}")
-            # 发送统一的失败信号
-            self.signals.moveToFailedSignal.emit(app_id, "网络错误")
         except Exception as e:
-            # 将所有其他错误统一处理为"下载失败"
-            print(f"下载过程出错: {str(e)}")
-            # 发送统一的失败信号
+            # 统一处理所有错误
+            error_type = "网络错误" if isinstance(e, requests.RequestException) else "下载失败"
+            print(f"{error_type}: {str(e)}")
             self.signals.moveToFailedSignal.emit(app_id, "网络错误")
 
     @pyqtSlot(str, int)
@@ -519,16 +501,14 @@ class DownloadInterface(ScrollArea):
         # 调整所有下载任务卡片的宽度
         width = self.width() - 80  # 考虑左右边距
         
-        # 调整下载中的任务卡片宽度
-        for task_card in self.downloadingTasks.values():
-            task_card.setMinimumWidth(width)
+        # 使用统一方法调整所有任务卡片宽度
+        self._updateTaskCardsWidth(width, self.downloadingTasks)
+        self._updateTaskCardsWidth(width, self.completedTasks)
+        self._updateTaskCardsWidth(width, self.failedTasks)
             
-        # 调整已完成的任务卡片宽度
-        for task_card in self.completedTasks.values():
-            task_card.setMinimumWidth(width)
-            
-        # 调整失败的任务卡片宽度
-        for task_card in self.failedTasks.values():
+    def _updateTaskCardsWidth(self, width, task_dict):
+        """统一更新任务卡片宽度"""
+        for task_card in task_dict.values():
             task_card.setMinimumWidth(width)
             
     def _loadDownloadedAppIds(self):
@@ -571,15 +551,8 @@ class DownloadInterface(ScrollArea):
                 for app in all_apps:
                     app_identifier = app.get('id', app['name'])
                     if app_identifier == app_id:
-                        # 构建文件名为name_version.format格式
-                        name = app['name']
-                        version = app.get('version', '')
-                        format = app.get('format', 'exe')  # 从JSON中获取格式，默认为exe
-                        
-                        if version:
-                            filename = f"{name}_{version}.{format}"
-                        else:
-                            filename = f"{name}.{format}"
+                        # 获取文件名
+                        filename = self._getAppFilename(app)
                             
                         # 获取当前下载路径
                         download_path = get_download_path()
@@ -606,10 +579,10 @@ class DownloadInterface(ScrollArea):
                             self.completedTasks[app_id] = task_card
                             
                             # 隐藏"暂无完成"提示
-                            self.completedInfoLabel.hide()
+                            self.pages["completedPage"]["infoLabel"].hide()
                             
                             # 添加到已完成界面
-                            self.completedPageLayout.insertWidget(0, task_card, 0, Qt.AlignTop | Qt.AlignHCenter)
+                            self.pages["completedPage"]["layout"].insertWidget(0, task_card, 0, Qt.AlignTop | Qt.AlignHCenter)
                             task_card.setMinimumWidth(self.width() - 80)  # 设置最小宽度，考虑左右边距
                         
                         break
@@ -622,12 +595,12 @@ class DownloadInterface(ScrollArea):
         except Exception as e:
             print(f"加载已完成下载记录出错: {e}")
 
-    def _moveTaskBetweenLists(self, app_id, source_dict, source_layout, target_dict, target_layout, empty_label, status_text=None):
+    def _moveTaskBetweenLists(self, app_id, source_dict, source_page_key, target_dict, target_page_key, status_text=None):
         """在不同任务列表间移动任务卡片的通用方法"""
         if app_id in source_dict:
             # 从源列表移除
             task_card = source_dict.pop(app_id)
-            source_layout.removeWidget(task_card)
+            self.pages[source_page_key]["layout"].removeWidget(task_card)
             
             # 更新状态文本（如果提供）
             if status_text:
@@ -637,23 +610,15 @@ class DownloadInterface(ScrollArea):
             target_dict[app_id] = task_card
             
             # 隐藏"暂无数据"提示
-            empty_label.hide()
+            self.pages[target_page_key]["infoLabel"].hide()
                 
             # 添加到目标界面，并确保占满宽度
-            target_layout.insertWidget(0, task_card, 0, Qt.AlignTop | Qt.AlignHCenter)
+            self.pages[target_page_key]["layout"].insertWidget(0, task_card, 0, Qt.AlignTop | Qt.AlignHCenter)
             task_card.setMinimumWidth(self.width() - 80)  # 设置最小宽度，考虑左右边距
             
             # 如果源列表为空，显示其"暂无数据"提示
-            source_empty_label = None
-            if source_dict == self.downloadingTasks:
-                source_empty_label = self.downloadingInfoLabel
-            elif source_dict == self.completedTasks:
-                source_empty_label = self.completedInfoLabel
-            elif source_dict == self.failedTasks:
-                source_empty_label = self.failedInfoLabel
-                
-            if source_empty_label and not source_dict:
-                source_empty_label.show()
+            if not source_dict:
+                self.pages[source_page_key]["infoLabel"].show()
                 
             return task_card
         return None
@@ -674,10 +639,9 @@ class DownloadInterface(ScrollArea):
         task_card = self._moveTaskBetweenLists(
             app_id, 
             self.downloadingTasks, 
-            self.downloadingPageLayout,
+            "downloadingPage",
             self.completedTasks, 
-            self.completedPageLayout,
-            self.completedInfoLabel
+            "completedPage"
         )
         
         if task_card:
@@ -691,10 +655,6 @@ class DownloadInterface(ScrollArea):
             # 显示通知
             app_name = task_card.app_data['name']
             self._showNotification('下载完成', f"{app_name} {self.tr('已成功下载')}", 'success')
-            
-            # 更新界面
-            self.completedPage.update()
-            self.update()
     
     @pyqtSlot(str, str)
     def _moveToFailed(self, app_id, error_msg):
@@ -702,10 +662,9 @@ class DownloadInterface(ScrollArea):
         task_card = self._moveTaskBetweenLists(
             app_id, 
             self.downloadingTasks, 
-            self.downloadingPageLayout,
+            "downloadingPage",
             self.failedTasks, 
-            self.failedPageLayout,
-            self.failedInfoLabel,
+            "failedPage",
             f"{self.tr('下载失败')}: {self.tr('网络错误')}"
         )
         
@@ -720,9 +679,6 @@ class DownloadInterface(ScrollArea):
             )
             # 控制台输出详细错误
             print(f"下载失败: {error_msg}")
-            # 更新界面
-            self.failedPage.update()
-            self.update()
 
     @pyqtSlot(object)
     def _handleRedownload(self, app_data):
@@ -736,25 +692,22 @@ class DownloadInterface(ScrollArea):
             task_card = self._moveTaskBetweenLists(
                 app_id, 
                 self.completedTasks, 
-                self.completedPageLayout,
+                "completedPage",
                 self.downloadingTasks, 
-                self.downloadingPageLayout,
-                self.downloadingInfoLabel
+                "downloadingPage"
             )
         elif app_id in self.failedTasks:
             task_card = self._moveTaskBetweenLists(
                 app_id, 
                 self.failedTasks, 
-                self.failedPageLayout,
+                "failedPage",
                 self.downloadingTasks, 
-                self.downloadingPageLayout,
-                self.downloadingInfoLabel
+                "downloadingPage"
             )
             
         if task_card:
             # 切换到下载界面
-            self.stackedWidget.setCurrentWidget(self.downloadingPage)
-            self.segmentedWidget.setCurrentItem("downloadingPage")
+            self._switchToPage("downloadingPage")
             
             # 从已下载应用ID列表中移除
             if app_id in self.downloaded_app_ids:
@@ -766,9 +719,6 @@ class DownloadInterface(ScrollArea):
             if self._startDownloadThread(app_data, app_id, task_card):
                 # 显示通知
                 self._showNotification('重新下载', f"{app_data['name']} {self.tr('开始重新下载')}")
-                
-            # 更新界面
-            self.update()
 
     @pyqtSlot(object)
     def _handleDeleteFile(self, app_data):
@@ -785,12 +735,12 @@ class DownloadInterface(ScrollArea):
         # 从已完成列表中移除卡片
         if app_id in self.completedTasks:
             task_card = self.completedTasks.pop(app_id)
-            self.completedPageLayout.removeWidget(task_card)
+            self.pages["completedPage"]["layout"].removeWidget(task_card)
             task_card.deleteLater()  # 释放卡片资源
             
             # 如果完成列表为空，显示"暂无完成"提示
             if not self.completedTasks:
-                self.completedInfoLabel.show()
+                self.pages["completedPage"]["infoLabel"].show()
         
         # 发送信号通知主窗口同步记录
         self.signals.moveToCompletedSignal.emit(app_id)

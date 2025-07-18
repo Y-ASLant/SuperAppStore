@@ -12,7 +12,7 @@
 
 ## 📋 项目简介
 
-SuperAppStore是一个强大的应用商店平台，专为简化软件获取和管理而设计。它支持多种软件源接入方式，包括自定义服务器JSON列表和GitHub Release，让用户可以轻松获取和更新各类应用程序。
+SuperAppStore是一个Windows应用商店，专为简化软件获取和管理而设计。它支持多种软件源接入方式，包括自定义服务器JSON列表和GitHub Release，让用户可以轻松获取和更新各类应用程序。
 
 ## ✨ 主要特性
 
@@ -21,6 +21,8 @@ SuperAppStore是一个强大的应用商店平台，专为简化软件获取和�
 - 🚀 一键安装与快速部署
 - 🔄 应用自动更新检测与提醒
 - 🛡️ 软件安全性验证
+- 🎨 Fluent设计风格：采用现代化的微软Fluent UI设计语言
+- 🌓 主题切换：支持深色/浅色主题模式
 - 📱 用户友好的界面与操作流程
 
 ## 📷 界面展示
@@ -31,11 +33,28 @@ SuperAppStore是一个强大的应用商店平台，专为简化软件获取和�
   <img src="./pic/screen_1.png" alt="登录界面" width="90%">
   <p>登录界面</p>
   
-  <img src="./pic/screen_5.png" alt="详情界面" width="90%">
-  <p>设置界面</p>
-  
-  <video src="https://raw.githubusercontent.com/Y-ASLant/SuperAppStore/refs/heads/main/pic/update.mp4" autoplay loop controls width="90%"></video>
-  <p>更新演示</p>
+  <table width="100%">
+    <tr>
+      <td align="center" width="50%">
+        <img src="./pic/screen_3.png" alt="应用列表界面" width="100%">
+        <p>应用列表界面</p>
+      </td>
+      <td align="center" width="50%">
+        <img src="./pic/screen_4.png" alt="下载界面" width="100%">
+        <p>下载界面</p>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" width="50%">
+        <img src="./pic/screen_2.png" alt="下载完成界面" width="100%">
+        <p>下载完成界面</p>
+      </td>
+      <td align="center" width="50%">
+        <img src="./pic/screen_5.png" alt="设置界面" width="100%">
+        <p>设置界面</p>
+      </td>
+    </tr>
+  </table>
 </div>
 
 ## 🔧 软件源支持
@@ -91,11 +110,16 @@ uv sync
 uv run main.py
 ```
 
-### 使用Pyinstaller快速构建独立可执行文件
+### 构建独立可执行文件
 
 ```bash
 pyinstaller --name "SuperAppStore" --noconfirm --clean --windowed --onedir --contents-directory Lib --icon="App.ico" main.py
 ```
+或者  
+
+```bash
+uv run win.py
+``` 
 
 ## 📝 许可证
 

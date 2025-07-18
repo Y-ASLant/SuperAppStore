@@ -143,8 +143,8 @@
     </message>
     <message>
         <location filename="../../view/setting_interface.py" line="93"/>
-        <source>Discover new features and learn useful tips about Fluent Client</source>
-        <translation>髮現並了解關於 Fluent Client 的新特性和最佳實踐</translation>
+        <source>Discover new features and learn useful tips about Super App Store</source>
+        <translation>髮現並了解關於 Super App Store 的新特性和最佳實踐</translation>
     </message>
     <message>
         <location filename="../../view/setting_interface.py" line="102"/>
@@ -153,8 +153,8 @@
     </message>
     <message>
         <location filename="../../view/setting_interface.py" line="102"/>
-        <source>Help us improve Fluent Client by providing feedback</source>
-        <translation>提供反饋以幫助我們改善 Fluent Client</translation>
+        <source>Help us improve Super App Store by providing feedback</source>
+        <translation>提供反饋以幫助我們改善 Super App Store</translation>
     </message>
     <message>
         <location filename="../../view/setting_interface.py" line="109"/>
