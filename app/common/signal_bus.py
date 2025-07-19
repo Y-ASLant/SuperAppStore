@@ -7,6 +7,7 @@ class SignalBus(QObject):
 
     checkUpdateSig = pyqtSignal()
     micaEnableChanged = pyqtSignal(bool)
+    animationEnableChanged = pyqtSignal(bool)
     downloadApp = pyqtSignal(dict)  # 传递app_data字典
 
 

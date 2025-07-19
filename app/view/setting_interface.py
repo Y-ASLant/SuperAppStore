@@ -43,6 +43,13 @@ class SettingInterface(ScrollArea):
             cfg.micaEnabled,
             self.personalGroup
         )
+        self.animationCard = SwitchSettingCard(
+            FIF.SPEED_HIGH,
+            self.tr('界面切换动画'),
+            self.tr('启用或禁用界面切换时的动画效果'),
+            cfg.animationEnabled,
+            self.personalGroup
+        )
         self.themeCard = ComboBoxSettingCard(
             cfg.themeMode,
             FIF.BRUSH,
@@ -139,6 +146,7 @@ class SettingInterface(ScrollArea):
         self.settingLabel.move(36, 50)
 
         self.personalGroup.addSettingCard(self.micaCard)
+        self.personalGroup.addSettingCard(self.animationCard)
         self.personalGroup.addSettingCard(self.themeCard)
         self.personalGroup.addSettingCard(self.zoomCard)
         self.personalGroup.addSettingCard(self.languageCard)
@@ -170,10 +178,8 @@ class SettingInterface(ScrollArea):
         """ connect signal to slot """
         cfg.appRestartSig.connect(self._showRestartTooltip)
 
-        # personalization
-        # 直接在设置界面通过themeCard控制主题，无需单独连接全局themeChanged信号
-        # 移除: cfg.themeChanged.connect(setTheme)
         self.micaCard.checkedChanged.connect(signalBus.micaEnableChanged)
+        self.animationCard.checkedChanged.connect(signalBus.animationEnableChanged)
 
         # check update
         self.aboutCard.clicked.connect(signalBus.checkUpdateSig)

@@ -79,6 +79,7 @@ class MainWindow(MSFluentWindow):
 
     def connectSignalToSlot(self):
         signalBus.micaEnableChanged.connect(self.setMicaEffectEnabled)
+        signalBus.animationEnableChanged.connect(self.setAnimationEnabled)
         signalBus.checkUpdateSig.connect(self.checkUpdate)
         signalBus.downloadApp.connect(self.onDownloadApp)
         self.downloadInterface.signals.moveToCompletedSignal.connect(self.onDownloadComplete)
@@ -218,6 +219,10 @@ class MainWindow(MSFluentWindow):
 
         self.splashScreen.finish()
 
+    def setAnimationEnabled(self, enabled):
+        """设置界面切换动画是否启用"""
+        self.stackedWidget.setAnimationEnabled(enabled)
+        
     def initWindow(self):
         self.resize(1000, 700)
         self.setMinimumWidth(760)
@@ -226,6 +231,9 @@ class MainWindow(MSFluentWindow):
 
         self.setCustomBackgroundColor(QColor(240, 244, 249), QColor(32, 32, 32))
         self.setMicaEffectEnabled(cfg.get(cfg.micaEnabled))
+        
+        # 根据配置设置动画效果
+        self.stackedWidget.setAnimationEnabled(cfg.get(cfg.animationEnabled))
 
         # create splash screen
         self.splashScreen = SplashScreen(self.windowIcon(), self)
