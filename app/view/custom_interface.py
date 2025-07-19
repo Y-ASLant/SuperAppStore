@@ -26,11 +26,6 @@ class CustomInterface(ScrollArea):
         self.scrollWidget.setObjectName("scrollWidget")
 
         # 创建界面元素
-        # 添加说明文字
-        self.descriptionLabel = BodyLabel(
-            self.tr("在这里可以自定义软件的各项设置"), 
-            self
-        )
         
         # 下载路径设置
         self.downloadPathLabel = SubtitleLabel(self.tr("下载路径设置"), self)
@@ -72,7 +67,6 @@ class CustomInterface(ScrollArea):
         self.setWidgetResizable(True)
         
         # 设置字体
-        setFont(self.descriptionLabel, 16, QFont.Weight.Normal)
         setFont(self.downloadPathLabel, 18, QFont.Weight.DemiBold)
         setFont(self.downloadPathDescriptionLabel, 14, QFont.Weight.Normal)
         
@@ -84,9 +78,6 @@ class CustomInterface(ScrollArea):
         
     def __initLayout(self):
         """初始化布局"""
-        # 添加到主布局
-        self.vBoxLayout.addWidget(self.descriptionLabel)
-        self.vBoxLayout.addSpacing(30)
         
         # 添加下载路径设置
         self.vBoxLayout.addWidget(self.downloadPathLabel)
@@ -134,4 +125,4 @@ class CustomInterface(ScrollArea):
             self.tr('下载路径已重置为默认值'),
             duration=2000,
             parent=self
-        ) 
+        )
