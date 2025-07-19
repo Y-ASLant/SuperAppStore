@@ -145,10 +145,8 @@ class MainWindow(MSFluentWindow):
         if hasattr(self.applicationInterface, 'tracking_downloads') and app_id in self.applicationInterface.tracking_downloads:
             self.applicationInterface.tracking_downloads.remove(app_id)
         
-        # 刷新应用列表显示
-        if hasattr(self.applicationInterface, '_ApplicationInterface__updateAppList'):
-            self.applicationInterface._ApplicationInterface__updateAppList()
-            self.applicationInterface._ApplicationInterface__updateGameList()
+        # 只更新对应卡片的状态，不刷新整个列表
+        self.__updateAppCardDownloadButton(app_id)
             
     def onDownloadFailed(self, app_id, error_msg):
         """处理下载失败事件"""
@@ -156,10 +154,33 @@ class MainWindow(MSFluentWindow):
         if hasattr(self.applicationInterface, 'tracking_downloads') and app_id in self.applicationInterface.tracking_downloads:
             self.applicationInterface.tracking_downloads.remove(app_id)
         
-        # 刷新应用列表显示
-        if hasattr(self.applicationInterface, '_ApplicationInterface__updateAppList'):
-            self.applicationInterface._ApplicationInterface__updateAppList()
-            self.applicationInterface._ApplicationInterface__updateGameList()
+        # 只更新对应卡片的状态，不刷新整个列表
+        self.__updateAppCardDownloadButton(app_id)
+        
+    def __updateAppCardDownloadButton(self, app_id):
+        """更新特定应用卡片的下载按钮状态
+        
+        Args:
+            app_id: 应用ID
+        """
+        # 在应用界面查找并更新对应的卡片
+        appInterface = self.applicationInterface
+        
+        # 检查应用界面中的卡片
+        if hasattr(appInterface, 'app_cards'):
+            for card in appInterface.app_cards:
+                card_id = card.app_data.get('id', card.app_data['name'])
+                if card_id == app_id:
+                    card.downloadButton.setVisible(False)
+                    break
+        
+        # 检查游戏界面中的卡片
+        if hasattr(appInterface, 'game_cards'):
+            for card in appInterface.game_cards:
+                card_id = card.app_data.get('id', card.app_data['name'])
+                if card_id == app_id:
+                    card.downloadButton.setVisible(False)
+                    break
 
     def checkUpdate(self):
         """检查更新"""

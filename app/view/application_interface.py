@@ -4,10 +4,11 @@ from qfluentwidgets import (
     TransparentToolButton, BodyLabel, CaptionLabel, StrongBodyLabel, SubtitleLabel, ToolButton,
     FluentIcon as FIF
 )
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget
+from PyQt5.QtCore import Qt, pyqtSignal, QPropertyAnimation, QEasingCurve
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget, QGraphicsOpacityEffect
 import json
 import os
+from PyQt5.QtCore import QTimer
 
 from ..common.style_sheet import StyleSheet
 from ..common.setting import APPS_FILE, DOWNLOADED_APPS_FILE
@@ -162,8 +163,14 @@ class ApplicationInterface(ScrollArea):
         self.gameSortComboBox.setCurrentIndex(0)
         self.gameSortComboBox.currentIndexChanged.connect(self.__onGameSortOptionChanged)
         
+        # 添加刷新按钮
+        self.gameRefreshButton = ToolButton(FIF.SYNC)
+        self.gameRefreshButton.setToolTip(self.tr("刷新游戏列表"))
+        self.gameRefreshButton.clicked.connect(self.__onRefreshClicked)
+        
         self.gameControlLayout.addWidget(self.gameSearchEdit, 1)
         self.gameControlLayout.addWidget(self.gameSortComboBox)
+        self.gameControlLayout.addWidget(self.gameRefreshButton)
         
         # 游戏卡片列表
         self.gameListLayout = QVBoxLayout()
@@ -292,6 +299,9 @@ class ApplicationInterface(ScrollArea):
     
     def __updateAppList(self):
         """更新应用列表显示"""
+        # 停止和清理旧的动画定时器和动画
+        self.__clearAnimations("app_animation_timer", "app_animations")
+        
         self.__clearLayout(self.appListLayout)
         
         if not self.filtered_apps:
@@ -299,6 +309,10 @@ class ApplicationInterface(ScrollArea):
             emptyLabel.setAlignment(Qt.AlignCenter)
             self.appListLayout.addWidget(emptyLabel)
         else:
+            # 创建单独的卡片和动画列表
+            self.app_cards = []
+            self.app_animations = []
+            
             for app in self.filtered_apps:
                 card = AppCard(app)
                 card.downloadClicked.connect(self.__onDownloadApp)
@@ -306,12 +320,57 @@ class ApplicationInterface(ScrollArea):
                 app_id = app.get('id', app['name'])
                 if app_id in self.downloaded_app_ids or app_id in self.tracking_downloads:
                     card.downloadButton.setVisible(False)
+                
+                # 初始设置为透明
+                card.setVisible(False)
                 self.appListLayout.addWidget(card)
+                self.app_cards.append(card)
+            
+            # 创建顺序显示卡片的定时器
+            self.app_animation_timer = QTimer()
+            self.app_animation_timer.setInterval(30)
+            self.app_animation_index = 0
+            self.app_animation_timer.timeout.connect(self.__animateNextAppCard)
+            self.app_animation_timer.start()
         
         self.appListLayout.addStretch(1)
     
+    def __animateNextAppCard(self):
+        """依次显示下一个应用卡片"""
+        if self.app_animation_index < len(self.app_cards):
+            try:
+                card = self.app_cards[self.app_animation_index]
+                if not card.isVisible():
+                    card.setVisible(True)
+                
+                    # 创建淡入动画
+                    opacity = QGraphicsOpacityEffect(card)
+                    card.setGraphicsEffect(opacity)
+                    opacity.setOpacity(0)
+                
+                    animation = QPropertyAnimation(opacity, b"opacity")
+                    animation.setDuration(250)
+                    animation.setStartValue(0)
+                    animation.setEndValue(1)
+                    animation.setEasingCurve(QEasingCurve.InOutCubic)
+                    animation.start()
+                
+                    # 保存动画引用防止被垃圾回收
+                    self.app_animations.append(animation)
+            except (RuntimeError, Exception) as e:
+                # 对象可能已被删除或发生其他错误，跳过这个卡片
+                print(f"动画卡片错误: {e}")
+            
+            self.app_animation_index += 1
+        else:
+            # 所有卡片都已显示，停止定时器
+            self.app_animation_timer.stop()
+            
     def __updateGameList(self):
         """更新游戏列表显示"""
+        # 停止和清理旧的动画定时器和动画
+        self.__clearAnimations("game_animation_timer", "game_animations")
+        
         self.__clearLayout(self.gameListLayout)
         
         if not self.filtered_games:
@@ -319,6 +378,10 @@ class ApplicationInterface(ScrollArea):
             emptyLabel.setAlignment(Qt.AlignCenter)
             self.gameListLayout.addWidget(emptyLabel)
         else:
+            # 创建单独的卡片和动画列表
+            self.game_cards = []
+            self.game_animations = []
+            
             for game in self.filtered_games:
                 card = AppCard(game)
                 card.downloadClicked.connect(self.__onDownloadApp)
@@ -326,9 +389,51 @@ class ApplicationInterface(ScrollArea):
                 game_id = game.get('id', game['name'])
                 if game_id in self.downloaded_app_ids or game_id in self.tracking_downloads:
                     card.downloadButton.setVisible(False)
+                
+                # 初始设置为透明
+                card.setVisible(False)
                 self.gameListLayout.addWidget(card)
+                self.game_cards.append(card)
+            
+            # 创建顺序显示卡片的定时器
+            self.game_animation_timer = QTimer()
+            self.game_animation_timer.setInterval(30)
+            self.game_animation_index = 0
+            self.game_animation_timer.timeout.connect(self.__animateNextGameCard)
+            self.game_animation_timer.start()
             
         self.gameListLayout.addStretch(1)
+        
+    def __animateNextGameCard(self):
+        """依次显示下一个游戏卡片"""
+        if self.game_animation_index < len(self.game_cards):
+            try:
+                card = self.game_cards[self.game_animation_index]
+                if not card.isVisible():
+                    card.setVisible(True)
+                    
+                    # 创建淡入动画
+                    opacity = QGraphicsOpacityEffect(card)
+                    card.setGraphicsEffect(opacity)
+                    opacity.setOpacity(0)
+                    
+                    animation = QPropertyAnimation(opacity, b"opacity")
+                    animation.setDuration(250)
+                    animation.setStartValue(0)
+                    animation.setEndValue(1)
+                    animation.setEasingCurve(QEasingCurve.InOutCubic)
+                    animation.start()
+                    
+                    # 保存动画引用防止被垃圾回收
+                    self.game_animations.append(animation)
+            except (RuntimeError, Exception) as e:
+                # 对象可能已被删除或发生其他错误，跳过这个卡片
+                print(f"动画卡片错误: {e}")
+                
+            self.game_animation_index += 1
+        else:
+            # 所有卡片都已显示，停止定时器
+            self.game_animation_timer.stop()
     
     def __clearLayout(self, layout):
         """清空布局中的所有控件"""
@@ -439,10 +544,36 @@ class ApplicationInterface(ScrollArea):
             # 否则只重新加载本地文件
             self.__loadApps()
             self.__showSuccessNotification(self.tr("应用列表已刷新"))
-
+        
     def __connectSignalToSlot(self):
         """连接信号和槽"""
         # 连接分段导航栏的信号
         self.segmentedWidget.currentItemChanged.connect(
             lambda k: self.stackedWidget.setCurrentWidget(self.findChild(QWidget, k))
         ) 
+
+    def __clearAnimations(self, timer_attr_name, animations_attr_name):
+        """清理动画定时器和动画列表
+        
+        Args:
+            timer_attr_name: 定时器属性名称
+            animations_attr_name: 动画列表属性名称
+        """
+        # 停止定时器
+        if hasattr(self, timer_attr_name):
+            timer = getattr(self, timer_attr_name)
+            try:
+                timer.stop()
+                timer.timeout.disconnect()  # 断开所有连接
+            except Exception:
+                pass  # 忽略任何错误
+        
+        # 清空动画列表
+        if hasattr(self, animations_attr_name):
+            animations = getattr(self, animations_attr_name)
+            for animation in animations:
+                try:
+                    animation.stop()
+                except Exception:
+                    pass  # 忽略任何错误
+            setattr(self, animations_attr_name, []) 
