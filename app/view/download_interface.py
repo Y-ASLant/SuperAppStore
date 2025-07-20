@@ -9,6 +9,7 @@ import os
 import requests
 import threading
 import json
+import time # Added for time.time()
 
 from ..common.style_sheet import StyleSheet
 from qfluentwidgets import setFont
@@ -19,7 +20,7 @@ from ..utils.update import CustomMessageBox
 
 class DownloadSignals(QObject):
     """下载相关信号"""
-    updateProgressSignal = pyqtSignal(str, int)  # 更新进度信号 (app_id, progress)
+    updateDownloadSignal = pyqtSignal(str, int, int, float)  # 更新下载信号 (app_id, progress, downloaded_size, current_time)
     moveToCompletedSignal = pyqtSignal(str)  # 移至已完成信号 (app_id)
     moveToFailedSignal = pyqtSignal(str, str)  # 移至失败信号 (app_id, error_msg)
 
@@ -39,6 +40,10 @@ class DownloadTaskCard(CardWidget):
         self.filename = ""
         self.local_file_path = ""
         self.is_downloaded = False
+        self.file_size = 0  # 添加文件大小属性
+        self.download_speed = 0  # 添加下载速度属性
+        self.downloaded_size = 0  # 添加已下载大小属性
+        self.last_update_time = 0  # 上次更新时间
         
         # 应用名称和版本
         self.headerLayout = QHBoxLayout()
@@ -66,6 +71,11 @@ class DownloadTaskCard(CardWidget):
         setFont(self.statusLabel, 12)
         self.statusLayout.addWidget(self.statusLabel)
         self.statusLayout.addStretch(1)
+        
+        # 添加下载详情标签
+        self.downloadDetailsLabel = QLabel("")
+        setFont(self.downloadDetailsLabel, 12)
+        self.statusLayout.addWidget(self.downloadDetailsLabel)
         
         # 按钮布局（水平排列）
         self.buttonsLayout = QHBoxLayout()
@@ -110,15 +120,42 @@ class DownloadTaskCard(CardWidget):
         self.buttonsLayout.addWidget(button)
         return button
 
-    @pyqtSlot(int)
-    def updateProgress(self, progress):
-        """更新下载进度"""
+    @pyqtSlot(int, int, float)
+    def updateDownload(self, progress, downloaded_size, current_time):
+        """更新下载进度和速度"""
+        # 更新进度条
         self.progressBar.setValue(progress)
+        
+        # 更新状态文本
         if progress < 100:
             self.statusLabel.setText(f"{self.tr('正在下载')} {progress}%")
+            
+            # 计算下载速度
+            if self.last_update_time > 0:
+                time_diff = current_time - self.last_update_time
+                if time_diff > 0:
+                    size_diff = downloaded_size - self.downloaded_size
+                    self.download_speed = size_diff / time_diff
+                    
+                    # 只显示下载速度
+                    if self.download_speed > 0:
+                        # 格式化速度显示
+                        speed = self.download_speed
+                        if speed < 1024:
+                            speed_str = f"{speed:.0f} B/s"
+                        elif speed < 1024 * 1024:
+                            speed_str = f"{speed/1024:.1f} KB/s"
+                        else:
+                            speed_str = f"{speed/(1024*1024):.1f} MB/s"
+                        self.downloadDetailsLabel.setText(speed_str)
+            
+            # 更新数据
+            self.downloaded_size = downloaded_size
+            self.last_update_time = current_time
         else:
             self.is_downloaded = True
             self.statusLabel.setText(self.tr("下载完成"))
+            self.downloadDetailsLabel.setText("")
             
             # 设置本地路径（确保路径正确）
             if not self.local_file_path and self.filename:
@@ -235,7 +272,7 @@ class DownloadInterface(ScrollArea):
         self.signals = DownloadSignals()
         
         # 连接信号到槽
-        self.signals.updateProgressSignal.connect(self._onUpdateProgress)
+        self.signals.updateDownloadSignal.connect(self._onUpdateDownload)
         self.signals.moveToCompletedSignal.connect(self._moveToCompleted)
         self.signals.moveToFailedSignal.connect(self._moveToFailed)
         
@@ -463,6 +500,10 @@ class DownloadInterface(ScrollArea):
                 # 增大块大小到 1MB，提高下载效率
                 chunk_size = 1024 * 1024
                 
+                # 下载开始时间
+                start_time = time.time()
+                last_update_time = start_time
+                
                 # 打开文件准备写入
                 with open(local_path, 'wb') as f:
                     # 读取和写入数据块
@@ -475,8 +516,12 @@ class DownloadInterface(ScrollArea):
                             downloaded += len(chunk)
                             progress = int(downloaded / file_size * 100) if file_size > 0 else 100
                             
-                            # 使用信号槽更新UI
-                            self.signals.updateProgressSignal.emit(app_id, progress)
+                            # 每0.5秒更新一次UI，避免频繁更新
+                            current_time = time.time()
+                            if current_time - last_update_time > 0.5 or progress >= 100:
+                                # 使用信号槽更新UI
+                                self.signals.updateDownloadSignal.emit(app_id, progress, downloaded, current_time)
+                                last_update_time = current_time
             
             # 下载完成后，发送完成信号
             self.signals.moveToCompletedSignal.emit(app_id)
@@ -487,13 +532,13 @@ class DownloadInterface(ScrollArea):
             print(f"{error_type}: {str(e)}")
             self.signals.moveToFailedSignal.emit(app_id, "网络错误")
 
-    @pyqtSlot(str, int)
-    def _onUpdateProgress(self, app_id, progress):
-        """处理进度更新信号"""
+    @pyqtSlot(str, int, int, float)
+    def _onUpdateDownload(self, app_id, progress, downloaded_size, current_time):
+        """处理下载更新信号"""
         task_card = self.downloadingTasks.get(app_id)
         if task_card:
-            task_card.updateProgress(progress)
-            
+            task_card.updateDownload(progress, downloaded_size, current_time)
+    
     def resizeEvent(self, event):
         """处理窗口大小调整事件"""
         super().resizeEvent(event)
