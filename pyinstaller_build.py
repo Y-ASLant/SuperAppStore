@@ -10,12 +10,36 @@ import sys
 import shutil
 from pathlib import Path
 from datetime import datetime
+def strip_emoji(text):
+    """移除文本中的 emoji"""
+    import re
+    # 移除 emoji 和特殊 Unicode 字符
+    emoji_pattern = re.compile("["
+        u"\U0001F600-\U0001F64F"  # emoticons
+        u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+        u"\U0001F680-\U0001F6FF"  # transport & map symbols
+        u"\U0001F1E0-\U0001F1FF"  # flags
+        u"\U00002702-\U000027B0"
+        u"\U000024C2-\U0001F251"
+        "]+", flags=re.UNICODE)
+    return emoji_pattern.sub('', text)
+
 def log_message(level, message, end='\n'):
     """输出日志信息"""
-    colors = {'INFO': '\033[94m', 'SUCCESS': '\033[92m', 'ERROR': '\033[91m', 'WARNING': '\033[93m'}
-    color = colors.get(level, '\033[0m')
-    timestamp = datetime.now().strftime("%H:%M:%S")
-    print(f"{timestamp} | {color}{level:<7}\033[0m | {message}", end=end)
+    # 在 CI 环境中禁用彩色输出和 emoji
+    is_ci = os.environ.get('CI') or os.environ.get('GITHUB_ACTIONS')
+    
+    if is_ci:
+        # CI 环境：无颜色，移除 emoji
+        message = strip_emoji(message)
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"{timestamp} | {level:<7} | {message}", end=end)
+    else:
+        # 本地环境：彩色输出，保留 emoji
+        colors = {'INFO': '\033[94m', 'SUCCESS': '\033[92m', 'ERROR': '\033[91m', 'WARNING': '\033[93m'}
+        color = colors.get(level, '\033[0m')
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"{timestamp} | {color}{level:<7}\033[0m | {message}", end=end)
 
 def log_info(message, end='\n'): log_message('INFO', message, end)
 def log_success(message, end='\n'): log_message('SUCCESS', message, end)  
