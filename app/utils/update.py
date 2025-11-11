@@ -136,23 +136,66 @@ class CheckUpdateThread(QThread):
     def run(self):
         """线程执行函数，检查更新"""
         try:
+            # 准备请求头，添加 GitHub token 以避免频率限制
+            headers = {
+                'Accept': 'application/vnd.github+json',
+                'X-GitHub-Api-Version': '2022-11-28'
+            }
+            
+            # 从环境变量读取 GitHub token（如果存在）
+            github_token = os.getenv('GITHUB_TOKEN')
+            if github_token:
+                headers['Authorization'] = f'Bearer {github_token}'
+            
             # 发送请求获取最新版本信息
-            response = requests.get(self.version_url, timeout=10)
+            response = requests.get(self.version_url, headers=headers, timeout=10)
             response.raise_for_status()  # 如果请求失败，抛出异常
 
-            # 解析JSON数据
+            # 解析JSON数据 - GitHub Releases API 格式
             data = response.json()
-            remote_version = data.get("version")
-            remote_date = data.get("update_date", "")
-            changelog = data.get("changelog", [])
-            download_url = data.get("download_url", "")
-            force_update = data.get("force_update", False)
-
-            # 将更新日志列表转换为字符串
-            changelog_str = "\n".join([f"• {item}" for item in changelog])
+            
+            # 从 tag_name 获取版本号 (通常格式为 v1.0.0)
+            tag_name = data.get("tag_name", "")
+            remote_version = tag_name.lstrip("v")  # 移除 v 前缀
+            
+            # 从 published_at 获取发布日期
+            published_at = data.get("published_at", "")
+            remote_date = ""
+            if published_at:
+                # 将 ISO 8601 格式转换为 YYYY.MM.DD 格式
+                try:
+                    dt = datetime.datetime.strptime(published_at, "%Y-%m-%dT%H:%M:%SZ")
+                    remote_date = dt.strftime("%Y.%m.%d")
+                except Exception:
+                    pass
+            
+            # 从 body 获取更新日志
+            changelog_body = data.get("body", "")
+            # 将 body 按行分割，过滤空行
+            changelog_lines = [line.strip() for line in changelog_body.split("\n") if line.strip()]
+            changelog_str = "\n".join([f"• {line}" for line in changelog_lines]) if changelog_lines else "无更新说明"
+            
+            # 从 assets 中获取下载链接（选择第一个资源文件）
+            download_url = ""
+            assets = data.get("assets", [])
+            if assets and len(assets) > 0:
+                # 优先查找 .exe 文件
+                for asset in assets:
+                    if asset.get("name", "").endswith(".exe"):
+                        download_url = asset.get("browser_download_url", "")
+                        break
+                # 如果没有找到 .exe 文件，使用第一个资源
+                if not download_url:
+                    download_url = assets[0].get("browser_download_url", "")
+            
+            # GitHub releases 通常不标记强制更新，默认为 False
+            force_update = False
 
             # 比较版本号和日期
-            has_update_version = self._compare_version(remote_version)
+            has_update_version = False
+            if remote_version:
+                has_update_version = self._compare_version(remote_version)
+            
             has_update_date = False
             if remote_date:
                 has_update_date = self._compare_date(remote_date)
@@ -175,6 +218,8 @@ class CheckUpdateThread(QThread):
             # 其他错误处理
             error_msg = "检查更新失败，请稍后重试"
             print(f"检查更新失败: {e}")
+            import traceback
+            traceback.print_exc()
             # 发送信号表示检查失败
             self.updateCheckFinished.emit(False, "", error_msg, "", False)
     
