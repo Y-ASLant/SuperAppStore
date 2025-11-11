@@ -1,0 +1,36 @@
+SettingInterface, #scrollWidget {
+    background-color: transparent;
+}
+
+QScrollArea {
+    border: none;
+    background-color: transparent;
+}
+
+
+QLabel#settingLabel {
+    background-color: transparent;
+    color: white;
+}
+
+QLabel#contentLabel {
+    background-color: transparent;
+    color: white;
+}
+
+/* 下载任务卡片样式 */
+DownloadTaskCard {
+    background-color: rgba(39, 39, 39, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+}
+
+DownloadTaskCard QLabel {
+    color: white;
+}
+
+/* 下载界面的特定样式 */
+#downloadingPage, #completedPage, #failedPage {
+    background-color: transparent;
+}
+

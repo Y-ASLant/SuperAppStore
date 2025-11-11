@@ -1,0 +1,98 @@
+# This workflow will install Python dependencies and build the application
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Python package
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  package:
+    runs-on: windows-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.12"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install altgraph==0.17.4 requests>=2.32.4 darkdetect==0.8.0 loguru>=0.7.3 packaging==25.0 pefile==2023.2.7 pyinstaller>=6.14.2 pyinstaller-hooks-contrib==2025.5 pyqt-fluent-widgets==1.9.2 pyqt5==5.15.11 requests==2.32.4 setuptools==80.9.0
+    - name: Extract version from setting.py
+      run: |
+        $version = python -c "from app.common.setting import VERSION; print(VERSION)"
+        echo "APP_VERSION=$version" >> $env:GITHUB_ENV
+    - name: Build with PyInstaller
+      run: |
+        pyinstaller --name "SuperAppStore" --noconfirm --clean --windowed --onedir --contents-directory Lib --icon="App.ico" --hidden-import PyQt5 --hidden-import PyQt5.QtCore --hidden-import PyQt5.QtGui --hidden-import PyQt5.QtWidgets --hidden-import loguru main.py
+    - name: Install UPX
+      run: |
+        choco install upx -y
+    - name: Compress with UPX
+      run: |
+        Write-Host "开始使用 UPX 极致压缩可执行文件..."
+        $files = Get-ChildItem -Path "dist\SuperAppStore" -Include *.exe,*.dll -Recurse
+        $successCount = 0
+        $failCount = 0
+        foreach ($file in $files) {
+          Write-Host "正在压缩: $($file.Name)"
+          $output = upx --best --lzma $file.FullName 2>&1
+          if ($LASTEXITCODE -eq 0) {
+            $successCount++
+            Write-Host "  ✓ 成功" -ForegroundColor Green
+          } else {
+            $failCount++
+            Write-Host "  ✗ 跳过 (文件可能已压缩或不兼容)" -ForegroundColor Yellow
+          }
+        }
+        Write-Host "`nUPX 压缩完成！成功: $successCount, 跳过: $failCount" -ForegroundColor Cyan
+        exit 0
+    - name: Setup Inno Setup
+      run: |
+        choco install innosetup -y
+    - name: Create Inno Setup script
+      run: |
+        @"
+        [Setup]
+        AppName=SuperAppStore
+        AppVersion=${{ env.APP_VERSION }}
+        AppId={{36E4AA33-3464-48E9-A418-CDAE5D3CA041}}
+        DefaultDirName={autopf}\SuperAppStore
+        DefaultGroupName=SuperAppStore
+        OutputBaseFilename=SuperAppStore_Setup
+        ; 优化压缩设置
+        Compression=lzma2/ultra64
+        SolidCompression=yes
+        InternalCompressLevel=max
+        WizardStyle=modern
+        SetupIconFile=App.ico
+        
+        [Files]
+        Source: "dist\SuperAppStore\*"; DestDir: "{app}"; Flags: recursesubdirs
+        
+        [Icons]
+        Name: "{group}\SuperAppStore"; Filename: "{app}\SuperAppStore.exe"
+        Name: "{commondesktop}\SuperAppStore"; Filename: "{app}\SuperAppStore.exe"
+        
+        [Run]
+        Filename: "{app}\SuperAppStore.exe"; Description: "启动应用"; Flags: nowait postinstall skipifsilent
+        "@ | Out-File -FilePath "installer.iss" -Encoding utf8
+    - name: Build installer
+      run: |
+        iscc installer.iss
+    - name: Create ZIP archive
+      run: |
+        Compress-Archive -Path dist/SuperAppStore -DestinationPath SuperAppStore.zip
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: SuperAppStore-artifacts
+        path: |
+          SuperAppStore.zip
+          Output/SuperAppStore_Setup.exe
