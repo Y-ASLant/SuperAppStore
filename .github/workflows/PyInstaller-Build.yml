@@ -27,29 +27,7 @@ jobs:
         echo "APP_VERSION=$version" >> $env:GITHUB_ENV
     - name: Build with PyInstaller
       run: |
-        uv run python pyinstaller_build.py
-    - name: Install UPX
-      run: |
-        choco install upx -y
-    - name: Compress with UPX
-      run: |
-        Write-Host "开始使用 UPX 极致压缩可执行文件..."
-        $files = Get-ChildItem -Path "build\SuperAppStore" -Include *.exe,*.dll -Recurse
-        $successCount = 0
-        $failCount = 0
-        foreach ($file in $files) {
-          Write-Host "正在压缩: $($file.Name)"
-          $output = upx --best --lzma $file.FullName 2>&1
-          if ($LASTEXITCODE -eq 0) {
-            $successCount++
-            Write-Host "  ✓ 成功" -ForegroundColor Green
-          } else {
-            $failCount++
-            Write-Host "  ✗ 跳过 (文件可能已压缩或不兼容)" -ForegroundColor Yellow
-          }
-        }
-        Write-Host "`nUPX 压缩完成！成功: $successCount, 跳过: $failCount" -ForegroundColor Cyan
-        exit 0
+        uv run pyinstaller_build.py
     - name: Setup Inno Setup
       run: |
         choco install innosetup -y
