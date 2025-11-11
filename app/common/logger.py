@@ -11,12 +11,14 @@ from pathlib import Path
 logger.remove()
 
 # 添加控制台输出（彩色，简洁格式）
-logger.add(
-    sys.stderr,
-    format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan> - <level>{message}</level>",
-    level="INFO",
-    colorize=True,
-)
+# 在 PyInstaller windowed 模式下，sys.stderr 可能是 None，需要判断
+if sys.stderr is not None:
+    logger.add(
+        sys.stderr,
+        format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan> - <level>{message}</level>",
+        level="INFO",
+        colorize=True,
+    )
 
 # 添加文件输出（详细格式，用于调试）
 log_dir = Path("AppData/logs")
