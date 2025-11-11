@@ -86,3 +86,8 @@ jobs:
     - name: Rename installer
       run: |
         Move-Item -Path "Output\SuperAppStore_${{ env.APP_VERSION }}-Setup.exe" -Destination "SuperAppStore_${{ env.APP_VERSION }}-Setup.exe"
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: SuperAppStore-${{ env.APP_VERSION }}
+        path: SuperAppStore_${{ env.APP_VERSION }}-Setup.exe
