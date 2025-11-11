@@ -1,6 +1,7 @@
 # coding:utf-8
 import os
 import sys
+from pathlib import Path
 
 from PyQt5.QtCore import Qt, QTranslator
 from PyQt5.QtWidgets import QApplication
@@ -11,7 +12,22 @@ from app.view.register_window import RegisterWindow
 from app.view.main_window import MainWindow
 
 
-# Using global variables to prevent th e interface from being destructed
+# 加载 .env 文件（仅用于本地开发）
+def load_env_file():
+    """从 .env 文件加载环境变量"""
+    env_file = Path(__file__).parent / '.env'
+    if env_file.exists():
+        with open(env_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    os.environ[key.strip()] = value.strip()
+
+load_env_file()
+
+
+# Using global variables to prevent the interface from being destructed
 mainWindow = None
 
 
